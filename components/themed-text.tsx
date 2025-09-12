@@ -19,6 +19,7 @@ export type ThemedTextProps = TextProps & {
     | "Grey14Reg"
     | "Grey12Reg"
     | "Grey10Reg"
+    | "Black16Reg"
     | "Black12Reg"
     | "Black10Reg";
 };
@@ -47,6 +48,7 @@ export function ThemedText({
         type === "Grey10Reg" ? styles.Grey10Reg : undefined,
         type === "Black10Reg" ? styles.Black10Reg : undefined,
         type === "Black12Reg" ? styles.Black12Reg : undefined,
+        type === "Black16Reg" ? styles.Black16Reg : undefined,
         style,
       ]}
       {...rest}
@@ -82,6 +84,11 @@ const styles = StyleSheet.create({
   },
   Black10Reg: {
     fontSize: fontSize(10),
+    color: Colors.lightBlack,
+    fontFamily: FontFamily.regular,
+  },
+  Black16Reg: {
+    fontSize: fontSize(15),
     color: Colors.lightBlack,
     fontFamily: FontFamily.regular,
   },

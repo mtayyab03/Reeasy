@@ -77,7 +77,7 @@ export default function LoginScreen(props: LoginScreenProps) {
     <Screen style={styles.screen}>
       <View style={styles.logocontainer}>
         <Image
-          style={{ width: fontSize(107), height: fontSize(127) }}
+          style={{ width: fontSize(100), height: fontSize(120) }}
           source={icons.logo}
         />
       </View>
@@ -190,6 +190,58 @@ export default function LoginScreen(props: LoginScreenProps) {
         )}
       </Formik>
 
+      {/* social media */}
+      <View
+        style={{
+          width: "90%",
+          flexDirection: "row",
+          marginVertical: RFPercentage(2),
+        }}
+      >
+        <View
+          style={{
+            width: "46%",
+            marginTop: RFPercentage(1),
+            height: RFPercentage(0.06),
+            backgroundColor: Colors.stroke,
+            borderRadius: RFPercentage(0.5),
+          }}
+        />
+        <View
+          style={{
+            width: "8%",
+            alignItems: "center",
+            justifyContent: "center",
+          }}
+        >
+          <Text
+            style={{ color: Colors.lightBlack, fontFamily: FontFamily.regular }}
+          >
+            or
+          </Text>
+        </View>
+
+        <View
+          style={{
+            width: "46%",
+            marginTop: RFPercentage(1),
+            height: RFPercentage(0.06),
+            backgroundColor: Colors.stroke,
+            borderRadius: RFPercentage(0.5),
+          }}
+        />
+      </View>
+      {/* authetication by google apple fb */}
+
+      <View style={styles.socialmain}>
+        <View style={styles.appfbgcontainer}>
+          <Image style={styles.fbglogo} source={icons.google} />
+        </View>
+        <View style={styles.appfbgcontainer}>
+          <Image style={styles.fbglogo} source={icons.fb} />
+        </View>
+      </View>
+
       <View
         style={{
           flexDirection: "row",
@@ -207,7 +259,10 @@ export default function LoginScreen(props: LoginScreenProps) {
         >
           Don’t have an account ?
         </Text>
-        <TouchableOpacity activeOpacity={0.7}>
+        <TouchableOpacity
+          onPress={() => router.replace("/(screens)/SignupScreen")}
+          activeOpacity={0.7}
+        >
           <Text
             style={{
               color: Colors.blue,
@@ -299,5 +354,24 @@ const styles = StyleSheet.create({
     color: Colors.white,
     fontSize: RFPercentage(1.8),
     fontFamily: FontFamily.semiBold,
+  },
+  appfbgcontainer: {
+    width: "49%",
+    paddingVertical: RFPercentage(1.5),
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: RFPercentage(0.1),
+    borderColor: Colors.stroke,
+    borderRadius: RFPercentage(1),
+  },
+  socialmain: {
+    width: "90%",
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
+  fbglogo: {
+    width: RFPercentage(3),
+    height: RFPercentage(3),
   },
 });

@@ -13,7 +13,7 @@ export default function SplashScreen() {
   const router = useRouter();
   useEffect(() => {
     const timer = setTimeout(() => {
-      router.push("/LoginScreen"); // Adjust path based on file location in app directory
+      router.push("/OnBoarding"); // Adjust path based on file location in app directory
     }, 3000);
 
     return () => clearTimeout(timer);

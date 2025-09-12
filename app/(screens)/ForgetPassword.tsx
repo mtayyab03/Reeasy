@@ -6,9 +6,10 @@ import {
   Text,
   Alert,
   TextInput,
+  Image,
 } from "react-native";
 import { RFPercentage } from "react-native-responsive-fontsize";
-import { AntDesign, Ionicons } from "@expo/vector-icons";
+import { AntDesign, Ionicons, Feather } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 
 // Components
@@ -56,51 +57,34 @@ export default function ForgetPassword() {
   return (
     <Screen style={styles.screen}>
       {/* arrow icon */}
-      <View
-        style={{
-          width: "90%",
-          flexDirection: "row",
-          alignItems: "center",
-          marginTop: RFPercentage(2),
-        }}
-      >
+      <View style={styles.arrowContainer}>
         <TouchableOpacity
           activeOpacity={0.7}
-          style={{
-            width: RFPercentage(5),
-            height: RFPercentage(5),
-            borderRadius: RFPercentage(3),
-            borderWidth: RFPercentage(0.1),
-            borderColor: Colors.grey,
-            alignItems: "center",
-            justifyContent: "center",
-          }}
+          style={styles.iconCircle}
           onPress={handleBack}
         >
-          <AntDesign name="arrow-left" size={24} color={Colors.blacky} />
+          <Feather name="arrow-left" size={24} color={Colors.blacky} />
         </TouchableOpacity>
       </View>
 
       {/* text */}
-      <View
-        style={{
-          width: "90%",
-          alignItems: "center",
-          justifyContent: "center",
-          marginTop: RFPercentage(3),
-          marginBottom: RFPercentage(1),
-        }}
-      >
+
+      <View style={styles.logocontainer}>
+        <Image
+          style={{ width: fontSize(66), height: fontSize(82) }}
+          source={icons.logox}
+        />
         <Text
           style={{
-            color: Colors.lightBlack,
+            color: Colors.blacky,
             fontFamily: FontFamily.semiBold,
-            fontSize: RFPercentage(3.2),
+            fontSize: fontSize(23),
+            marginTop: RFPercentage(1.5),
           }}
         >
-          Forget Password
+          Forgot Password?
         </Text>
-        <View style={{ width: "80%" }}>
+        <View style={{ width: "70%" }}>
           <Text
             style={{
               textAlign: "center",
@@ -110,7 +94,8 @@ export default function ForgetPassword() {
               fontSize: RFPercentage(1.3),
             }}
           >
-            Please enter your registered email to reset your password !
+            Enter your registered email and we’ll send you a verification code
+            to reset your password.
           </Text>
         </View>
       </View>
@@ -141,7 +126,7 @@ export default function ForgetPassword() {
         activeOpacity={0.7}
         onPress={handleForgetEmail}
       >
-        <AppButton title="Confirm" buttonColor={Colors.blue} />
+        <AppButton title="Send Code" buttonColor={Colors.blue} />
       </TouchableOpacity>
     </Screen>
   );
@@ -154,10 +139,28 @@ const styles = StyleSheet.create({
     alignItems: "center",
     backgroundColor: Colors.white,
   },
+  arrowContainer: {
+    width: "90%",
+    flexDirection: "row",
+    alignItems: "center",
+    marginTop: RFPercentage(2),
+  },
   loginbutton: {
     width: "90%",
-
     marginTop: RFPercentage(5),
+  },
+  iconCircle: {
+    width: RFPercentage(5),
+    height: RFPercentage(5),
+    borderRadius: RFPercentage(3),
+    borderWidth: RFPercentage(0.1),
+    borderColor: Colors.stroke,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  logocontainer: {
+    alignItems: "center",
+    justifyContent: "center",
   },
   emailmain: {
     flexDirection: "row",

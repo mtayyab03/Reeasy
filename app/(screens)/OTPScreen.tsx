@@ -11,7 +11,7 @@ import {
   Alert,
 } from "react-native";
 import { RFPercentage } from "react-native-responsive-fontsize";
-import { AntDesign } from "@expo/vector-icons";
+import { AntDesign, Feather } from "@expo/vector-icons";
 import { useRoute, useNavigation, RouteProp } from "@react-navigation/native";
 // Components
 import Screen from "../../components/common/Screen";
@@ -30,7 +30,6 @@ type OTPRouteParams = {
 export default function OTPScreen() {
   const router = useRouter();
   const route = useRoute<RouteProp<{ params: OTPRouteParams }, "params">>();
-  const navigation = useNavigation();
   const email = (route.params as OTPRouteParams)?.email;
   const [otp, setOTP] = useState<string[]>(["", "", "", "", "", ""]);
   const inputRefs = useRef<Array<TextInput | null>>([]);
@@ -56,64 +55,49 @@ export default function OTPScreen() {
     if (otp.every((digit) => digit.length > 0)) {
       // No API integration, just navigate
       router.replace({
-        pathname: "/(screens)/ForgetPassword",
+        pathname: "/(screens)/ResetPassword",
         params: { email },
       });
     } else {
       Alert.alert("Alert", "Please enter the complete OTP");
     }
   };
+  const handleBack = () => {
+    router.replace("/(screens)/LoginScreen");
+  };
 
   return (
     <Screen style={styles.screen}>
       {/* arrow icon */}
-      <View
-        style={{
-          width: "90%",
-          flexDirection: "row",
-          alignItems: "center",
-          marginTop: RFPercentage(2),
-        }}
-      >
+      {/* arrow icon */}
+      <View style={styles.arrowContainer}>
         <TouchableOpacity
           activeOpacity={0.7}
-          style={{
-            width: RFPercentage(5),
-            height: RFPercentage(5),
-            borderRadius: RFPercentage(3),
-            borderWidth: RFPercentage(0.1),
-            borderColor: Colors.lightGrey,
-            alignItems: "center",
-            justifyContent: "center",
-          }}
-          onPress={() => {
-            navigation.navigate("ForgetMailScreen" as never);
-          }}
+          style={styles.iconCircle}
+          onPress={handleBack}
         >
-          <AntDesign name="arrow-left" size={24} color={Colors.blacky} />
+          <Feather name="arrow-left" size={24} color={Colors.blacky} />
         </TouchableOpacity>
       </View>
 
       {/* text */}
-      <View
-        style={{
-          width: "90%",
-          alignItems: "center",
-          justifyContent: "center",
-          marginTop: RFPercentage(3),
-          marginBottom: RFPercentage(1),
-        }}
-      >
+
+      <View style={styles.logocontainer}>
+        <Image
+          style={{ width: fontSize(66), height: fontSize(82) }}
+          source={icons.logox}
+        />
         <Text
           style={{
-            color: Colors.blue,
+            color: Colors.blacky,
             fontFamily: FontFamily.semiBold,
-            fontSize: RFPercentage(3.2),
+            fontSize: fontSize(23),
+            marginTop: RFPercentage(1.5),
           }}
         >
-          Enter OTP
+          Verify Your Email
         </Text>
-        <View style={{ width: "80%" }}>
+        <View style={{ width: "70%" }}>
           <Text
             style={{
               textAlign: "center",
@@ -123,7 +107,7 @@ export default function OTPScreen() {
               fontSize: RFPercentage(1.3),
             }}
           >
-            Enter your verification code that we sent you on your email
+            We’ve sent a 6-digit code to your email. Enter it below to continue.
           </Text>
         </View>
       </View>
@@ -152,22 +136,29 @@ export default function OTPScreen() {
           />
         ))}
       </View>
+
+      {/*  button */}
+      <TouchableOpacity
+        style={styles.loginbutton}
+        activeOpacity={0.7}
+        onPress={handleSubmit}
+      >
+        <AppButton title="Verify" buttonColor={Colors.blue} />
+      </TouchableOpacity>
       <View
         style={{
-          width: "90%",
-          justifyContent: "flex-end",
-          marginTop: RFPercentage(2),
+          marginTop: RFPercentage(3),
           flexDirection: "row",
         }}
       >
         <Text
           style={{
-            fontSize: RFPercentage(1.3),
-            color: Colors.grey,
-            fontFamily: FontFamily.regular,
+            fontSize: fontSize(10),
+            color: Colors.lightBlack,
+            fontFamily: FontFamily.medium,
           }}
         >
-          Haven’t received code?
+          Don’t receive the OTP?
         </Text>
 
         <TouchableOpacity
@@ -187,15 +178,6 @@ export default function OTPScreen() {
           </Text>
         </TouchableOpacity>
       </View>
-
-      {/*  button */}
-      <TouchableOpacity
-        style={styles.loginbutton}
-        activeOpacity={0.7}
-        onPress={handleSubmit}
-      >
-        <AppButton title="Confirm" buttonColor={Colors.blue} />
-      </TouchableOpacity>
     </Screen>
   );
 }
@@ -207,9 +189,29 @@ const styles = StyleSheet.create({
     alignItems: "center",
     backgroundColor: Colors.white,
   },
+  arrowContainer: {
+    width: "90%",
+    flexDirection: "row",
+    alignItems: "center",
+    marginTop: RFPercentage(2),
+  },
+
+  iconCircle: {
+    width: RFPercentage(5),
+    height: RFPercentage(5),
+    borderRadius: RFPercentage(3),
+    borderWidth: RFPercentage(0.1),
+    borderColor: Colors.stroke,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  logocontainer: {
+    alignItems: "center",
+    justifyContent: "center",
+  },
   otpContainer: {
     width: "90%",
-    marginTop: RFPercentage(3),
+    marginTop: RFPercentage(4),
     flexDirection: "row",
     justifyContent: "center",
     alignItems: "center",
@@ -219,7 +221,7 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.white,
     borderRadius: 10,
     borderWidth: RFPercentage(0.1),
-    borderColor: Colors.blue,
+    borderColor: Colors.lightGrey,
     paddingVertical: 16,
     fontSize: 20,
     textAlign: "center",
@@ -227,6 +229,6 @@ const styles = StyleSheet.create({
   },
   loginbutton: {
     width: "90%",
-    marginTop: RFPercentage(2),
+    marginTop: RFPercentage(4),
   },
 });

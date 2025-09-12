@@ -38,4 +38,5 @@ export const Colors = {
   red: "#EB4335",
   lightGrey: "#B0B4BD",
   grey: "#959595",
+  stroke: "#E6E6E6",
 };
