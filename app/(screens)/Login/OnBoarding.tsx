@@ -4,14 +4,14 @@ import { Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { RFPercentage } from "react-native-responsive-fontsize";
 
 // Components
-import Screen from "../../components/common/Screen";
-import AppButton from "../../components/common/AppButton";
+import Screen from "@/components/common/Screen";
+import AppButton from "@/components/common/AppButton";
 import { ThemedText } from "@/components/themed-text";
 
 // constants
-import { Colors } from "../../constants/Colors";
-import { FontFamily } from "../../constants/font";
-import icons from "../../constants/icons";
+import { Colors } from "@/constants/Colors";
+import { FontFamily } from "@/constants/font";
+import icons from "@/constants/icons";
 import { fontSize } from "@/constants/fontUtils";
 
 const OnBoarding = () => {
@@ -36,13 +36,13 @@ const OnBoarding = () => {
     if (step < onboardingData.length - 1) {
       setStep(step + 1);
     } else {
-      router.replace("/LoginScreen");
+      router.replace("/Login/LoginScreen");
     }
   };
   return (
     <Screen style={styles.screen}>
       <TouchableOpacity
-        onPress={() => router.push("/LoginScreen")}
+        onPress={() => router.push("/Login/LoginScreen")}
         style={{
           width: "90%",
           alignItems: "flex-end",

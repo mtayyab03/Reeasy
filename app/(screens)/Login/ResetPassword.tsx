@@ -19,15 +19,14 @@ import {
 import { useRouter } from "expo-router";
 
 // Components
-import Screen from "../../components/common/Screen";
-import AppButton from "../../components/common/AppButton";
+import Screen from "@/components/common/Screen";
+import AppButton from "@/components/common/AppButton";
 
 // constants
-import { Colors } from "../../constants/Colors";
-import { FontFamily } from "../../constants/font";
-import icons from "../../constants/icons";
+import { Colors } from "@/constants/Colors";
+import { FontFamily } from "@/constants/font";
+import icons from "@/constants/icons";
 import { fontSize } from "@/constants/fontUtils";
-
 export default function ResetPassword() {
   const router = useRouter();
   const [password, setPassword] = useState("");
@@ -56,12 +55,12 @@ export default function ResetPassword() {
 
     if (Object.keys(newErrors).length === 0) {
       Alert.alert("Success", "Password reset successful!");
-      router.replace("/(screens)/LoginScreen");
+      router.replace("/(screens)/Login/LoginScreen");
     }
   };
 
   const handleBack = () => {
-    router.replace("/(screens)/LoginScreen");
+    router.back();
   };
 
   return (

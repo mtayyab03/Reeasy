@@ -1,98 +1,469 @@
-import { Image } from 'expo-image';
-import { Platform, StyleSheet } from 'react-native';
+// screens/MapScreen.tsx
+import React, { useState, useRef } from "react";
+import { useRouter } from "expo-router";
+import {
+  View,
+  Text,
+  TextInput,
+  Image,
+  TouchableOpacity,
+  StyleSheet,
+  ImageBackground,
+} from "react-native";
+import MapView, { Marker, Region } from "react-native-maps";
+import * as Location from "expo-location";
+import { RFPercentage } from "react-native-responsive-fontsize";
+import { Feather, Ionicons } from "@expo/vector-icons";
+// Components
+import Screen from "@/components/common/Screen";
 
-import { HelloWave } from '@/components/hello-wave';
-import ParallaxScrollView from '@/components/parallax-scroll-view';
-import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
-import { Link } from 'expo-router';
+// constants
+import { Colors } from "@/constants/Colors";
+import { FontFamily } from "@/constants/font";
+import icons from "@/constants/icons";
+import { fontSize } from "@/constants/fontUtils";
 
-export default function HomeScreen() {
+type MarkerData = {
+  id: string;
+  name: string;
+  type: string;
+  address: string;
+  coordinate: { latitude: number; longitude: number };
+  profileImage: string;
+  icon: any;
+  status: "available" | "unavailable";
+};
+
+const markers: MarkerData[] = [
+  {
+    id: "1",
+    name: "John Doe",
+    type: "Single fam",
+    address: "123 Green St, New York",
+    coordinate: { latitude: 40.7128, longitude: -74.006 },
+    profileImage: "https://randomuser.me/api/portraits/men/1.jpg",
+    icon: icons.Pgreen,
+    status: "available",
+  },
+  {
+    id: "2",
+    name: "Jane Smith",
+    type: "Condo",
+    address: "456 Red Ave, New York",
+    coordinate: { latitude: 40.7138, longitude: -74.001 },
+    profileImage: "https://randomuser.me/api/portraits/women/2.jpg",
+    icon: icons.Pred,
+    status: "unavailable",
+  },
+  {
+    id: "3",
+    name: "Mercy Krov",
+    type: "Multi Family",
+    address: "456 Red Ave, New York",
+    coordinate: { latitude: 40.7258, longitude: -74.011 },
+    profileImage: "https://randomuser.me/api/portraits/women/3.jpg",
+    icon: icons.Pred,
+    status: "unavailable",
+  },
+  {
+    id: "4",
+    name: "Jone Snow",
+    type: "Condo",
+    address: "456 Red Ave, New York",
+    coordinate: { latitude: 40.7258, longitude: -74.001 },
+    profileImage: "https://randomuser.me/api/portraits/men/3.jpg",
+    icon: icons.Pgreen,
+    status: "available",
+  },
+  {
+    id: "5",
+    name: "Allen Virk",
+    type: "Town House",
+    address: "456 Red Ave, New York",
+    coordinate: { latitude: 40.7178, longitude: -73.992 },
+    profileImage: "https://randomuser.me/api/portraits/women/4.jpg",
+    icon: icons.Pgreen,
+    status: "available",
+  },
+  {
+    id: "6",
+    name: "Lemo Roge",
+    type: "Town House",
+    address: "456 Green Ave, California",
+    coordinate: { latitude: 40.7378, longitude: -73.992 },
+    profileImage: "https://randomuser.me/api/portraits/women/5.jpg",
+    icon: icons.Pred,
+    status: "unavailable",
+  },
+];
+
+export default function Home() {
+  const router = useRouter();
+  const [selectedMarker, setSelectedMarker] = useState<MarkerData | null>(null);
+  const [showBanner, setShowBanner] = useState(true);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [userLocation, setUserLocation] = useState<{
+    latitude: number;
+    longitude: number;
+  } | null>(null);
+  const mapRef = useRef<MapView>(null);
+
+  const initialRegion: Region = {
+    latitude: 40.7128,
+    longitude: -74.006,
+    latitudeDelta: 0.05,
+    longitudeDelta: 0.05,
+  };
+
+  const handleGetLocation = async () => {
+    const { status } = await Location.requestForegroundPermissionsAsync();
+    if (status !== "granted") {
+      alert("Permission to access location was denied");
+      return;
+    }
+
+    const location = await Location.getCurrentPositionAsync({});
+    const coords = {
+      latitude: location.coords.latitude,
+      longitude: location.coords.longitude,
+    };
+    setUserLocation(coords);
+
+    // Center map on user location
+    mapRef.current?.animateToRegion(
+      {
+        ...coords,
+        latitudeDelta: 0.01,
+        longitudeDelta: 0.01,
+      },
+      1000
+    );
+  };
+
   return (
-    <ParallaxScrollView
-      headerBackgroundColor={{ light: '#A1CEDC', dark: '#1D3D47' }}
-      headerImage={
-        <Image
-          source={require('@/assets/images/partial-react-logo.png')}
-          style={styles.reactLogo}
-        />
-      }>
-      <ThemedView style={styles.titleContainer}>
-        <ThemedText type="title">Welcome!</ThemedText>
-        <HelloWave />
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 1: Try it</ThemedText>
-        <ThemedText>
-          Edit <ThemedText type="defaultSemiBold">app/(tabs)/index.tsx</ThemedText> to see changes.
-          Press{' '}
-          <ThemedText type="defaultSemiBold">
-            {Platform.select({
-              ios: 'cmd + d',
-              android: 'cmd + m',
-              web: 'F12',
-            })}
-          </ThemedText>{' '}
-          to open developer tools.
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <Link href="/modal">
-          <Link.Trigger>
-            <ThemedText type="subtitle">Step 2: Explore</ThemedText>
-          </Link.Trigger>
-          <Link.Preview />
-          <Link.Menu>
-            <Link.MenuAction title="Action" icon="cube" onPress={() => alert('Action pressed')} />
-            <Link.MenuAction
-              title="Share"
-              icon="square.and.arrow.up"
-              onPress={() => alert('Share pressed')}
-            />
-            <Link.Menu title="More" icon="ellipsis">
-              <Link.MenuAction
-                title="Delete"
-                icon="trash"
-                destructive
-                onPress={() => alert('Delete pressed')}
+    <Screen style={styles.screen}>
+      {/* Map */}
+      <MapView
+        ref={mapRef}
+        style={StyleSheet.absoluteFillObject}
+        initialRegion={initialRegion}
+      >
+        {markers.map((marker) => (
+          <Marker key={marker.id} coordinate={marker.coordinate}>
+            <TouchableOpacity
+              activeOpacity={0.7} // 👈 opacity effect on press
+              onPress={() => setSelectedMarker(marker)}
+            >
+              <Image
+                source={marker.icon}
+                style={{ width: 40, height: 40 }}
+                resizeMode="contain"
               />
-            </Link.Menu>
-          </Link.Menu>
-        </Link>
+            </TouchableOpacity>
+          </Marker>
+        ))}
 
-        <ThemedText>
-          {`Tap the Explore tab to learn more about what's included in this starter app.`}
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 3: Get a fresh start</ThemedText>
-        <ThemedText>
-          {`When you're ready, run `}
-          <ThemedText type="defaultSemiBold">npm run reset-project</ThemedText> to get a fresh{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> directory. This will move the current{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> to{' '}
-          <ThemedText type="defaultSemiBold">app-example</ThemedText>.
-        </ThemedText>
-      </ThemedView>
-    </ParallaxScrollView>
+        {/* User location marker */}
+        {userLocation && (
+          <Marker coordinate={userLocation}>
+            <Image
+              source={
+                // status check for user icon
+                markers[0].status === "available" ? icons.Pgreen : icons.Pred
+              }
+              style={{ width: 40, height: 40 }}
+              resizeMode="contain"
+            />
+          </Marker>
+        )}
+      </MapView>
+
+      {/* Search bar */}
+      <View style={styles.searchContainer}>
+        {/* Search Icon */}
+        <Ionicons
+          name="search"
+          size={20}
+          color="#999"
+          style={{ marginHorizontal: 8 }}
+        />
+
+        {/* Input */}
+        <TextInput
+          placeholder="Search..."
+          style={styles.searchInput}
+          placeholderTextColor="#999"
+          value={searchQuery}
+          onChangeText={(text) => setSearchQuery(text)} // controlled input
+        />
+
+        {/* Divider */}
+        <View style={styles.divider} />
+
+        {/* Filter Icon */}
+        <TouchableOpacity onPress={() => console.log("Filter clicked")}>
+          <Ionicons
+            name="options-outline"
+            size={22}
+            color={Colors.lightBlack}
+            style={{ marginHorizontal: 8 }}
+          />
+        </TouchableOpacity>
+      </View>
+
+      {showBanner && (
+        <View style={styles.bannerContainer}>
+          <ImageBackground
+            source={icons.adbanner}
+            style={{
+              width: "100%",
+              alignItems: "flex-end",
+              height: RFPercentage(20),
+            }}
+          >
+            <TouchableOpacity
+              activeOpacity={0.7}
+              onPress={() => setShowBanner(false)} // close on X
+            >
+              <Feather
+                color={Colors.white}
+                style={{
+                  marginRight: RFPercentage(1.5),
+                  marginTop: RFPercentage(1),
+                }}
+                size={24}
+                name={"x"}
+              />
+            </TouchableOpacity>
+          </ImageBackground>
+        </View>
+      )}
+      <View style={styles.currentLocation}>
+        <TouchableOpacity
+          style={styles.locationButton}
+          onPress={handleGetLocation}
+        >
+          <Image source={icons.location} style={styles.locationicon} />
+        </TouchableOpacity>
+      </View>
+
+      {/* Bottom Card */}
+      {selectedMarker && (
+        <View style={styles.bottomCard}>
+          <View style={styles.bottomCardInner}>
+            <View
+              style={{
+                width: "100%",
+                flexDirection: "row",
+                alignItems: "center",
+                justifyContent: "space-between",
+                marginBottom: RFPercentage(1),
+              }}
+            >
+              <Text
+                style={[
+                  styles.name,
+                  { fontFamily: FontFamily.medium, fontSize: 16 },
+                ]}
+              >
+                Property Details
+              </Text>
+              <TouchableOpacity
+                activeOpacity={0.7}
+                onPress={() => setSelectedMarker(null)}
+              >
+                <Feather
+                  color={Colors.lightBlack}
+                  style={{ marginRight: RFPercentage(1) }}
+                  size={24}
+                  name={"x"}
+                />
+              </TouchableOpacity>
+            </View>
+
+            <View style={styles.cardDetail}>
+              <Image
+                source={{ uri: selectedMarker.profileImage }}
+                style={styles.profileImage}
+              />
+              <View style={{ flex: 1, marginLeft: 10 }}>
+                <Text style={styles.name}>{selectedMarker.name}</Text>
+                <Text style={styles.details}>{selectedMarker.type}</Text>
+                <Text style={styles.details}>{selectedMarker.address}</Text>
+              </View>
+              <TouchableOpacity
+                style={styles.detailButton}
+                // onPress={() =>
+                //   router.push("/(screens)/Main/ItemDetails", {
+                //     marker: selectedMarker,
+                //   })
+                // }
+              >
+                <Text
+                  style={{ color: "white", fontFamily: FontFamily.semiBold }}
+                >
+                  Details
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      )}
+
+      <TouchableOpacity
+        onPress={() => router.push("/(screens)/Main/EventMapListView")}
+        activeOpacity={0.7}
+        style={styles.ListviewContainer}
+      >
+        <Text
+          style={{
+            color: Colors.blacky,
+            fontFamily: FontFamily.semiBold,
+            fontSize: RFPercentage(1.5),
+          }}
+        >
+          List View
+        </Text>
+      </TouchableOpacity>
+    </Screen>
   );
 }
 
 const styles = StyleSheet.create({
-  titleContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
+  screen: {
+    flex: 1,
+    justifyContent: "flex-start",
+    alignItems: "center",
+    backgroundColor: Colors.white,
   },
-  stepContainer: {
-    gap: 8,
-    marginBottom: 8,
+  searchContainer: {
+    position: "absolute",
+    top: 60,
+    left: 20,
+    right: 20,
+    backgroundColor: Colors.white,
+    borderRadius: RFPercentage(10),
+    paddingHorizontal: 15,
+    paddingVertical: 8,
+    shadowColor: "#000",
+    shadowOpacity: 0.2,
+    shadowRadius: 5,
+    elevation: 5,
+    flexDirection: "row",
+    alignItems: "center",
   },
-  reactLogo: {
-    height: 178,
-    width: 290,
-    bottom: 0,
+  bannerContainer: {
+    position: "absolute",
+    top: 130,
+    left: 20,
+    right: 20,
+    shadowColor: "#000",
+    shadowOpacity: 0.2,
+    shadowRadius: 5,
+    elevation: 5,
+  },
+
+  searchInput: {
+    flex: 1,
+    height: 40,
+    fontSize: 14,
+    color: Colors.lightBlack,
+  },
+  divider: {
+    width: 1,
+    height: 20,
+    backgroundColor: "#ccc",
+    marginHorizontal: 5,
+  },
+
+  bottomCard: {
+    width: "100%",
+    position: "absolute",
+    bottom: RFPercentage(5),
     left: 0,
-    position: 'absolute',
+    right: 0,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  bottomCardInner: {
+    width: "95%",
+    backgroundColor: "white",
+    padding: 15,
+    borderRadius: 20,
+    shadowColor: "#000",
+    shadowOpacity: 0.2,
+    shadowRadius: 5,
+    elevation: 5,
+  },
+  cardDetail: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  profileImage: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+  },
+  name: {
+    fontSize: 18,
+    fontFamily: FontFamily.bold,
+    color: Colors.lightBlack,
+  },
+  details: {
+    fontSize: 14,
+    fontFamily: FontFamily.regular,
+    color: "#555",
+  },
+  detailButton: {
+    backgroundColor: "#007BFF",
+    paddingHorizontal: 15,
+    paddingVertical: 8,
+    borderRadius: 8,
+  },
+  locationButton: {
+    width: RFPercentage(7),
+    backgroundColor: Colors.white,
+    // 🔽 Shadow
+    shadowColor: "#000", // iOS + Android
+    shadowOffset: { width: 0, height: -3 }, // iOS
+    shadowOpacity: 0.1, // iOS
+    shadowRadius: 4, // iOS
+    elevation: 6, // Android
+    height: RFPercentage(7),
+    borderRadius: RFPercentage(10),
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  currentLocation: {
+    position: "absolute",
+    bottom: RFPercentage(5),
+    left: 0,
+    right: 0,
+    width: "95%",
+    justifyContent: "flex-end",
+    alignItems: "flex-end",
+  },
+  locationicon: {
+    width: RFPercentage(4),
+    height: RFPercentage(4),
+  },
+  ListviewContainer: {
+    width: "100%",
+    height: RFPercentage(4),
+    borderTopLeftRadius: RFPercentage(20),
+    borderTopRightRadius: RFPercentage(10),
+    position: "absolute",
+    left: 0,
+    bottom: 0,
+    right: 0,
+    backgroundColor: Colors.white,
+    alignItems: "center",
+    justifyContent: "center",
+    // 🔽 Shadow
+    shadowColor: "#000", // iOS + Android
+    shadowOffset: { width: 0, height: -3 }, // iOS
+    shadowOpacity: 0.1, // iOS
+    shadowRadius: 4, // iOS
+    elevation: 6, // Android
   },
 });

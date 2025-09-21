@@ -15,9 +15,45 @@ const profile = require("../assets/images/icons/profile.png");
 const pflock = require("../assets/images/icons/pflock.png");
 const google = require("../assets/images/icons/google.png");
 const fb = require("../assets/images/icons/fb.png");
+const language = require("../assets/images/icons/language.png");
+const favorite = require("../assets/images/icons/favorite.png");
+
+const web = require("../assets/images/icons/web.png");
+const mail = require("../assets/images/icons/mail.png");
+const personal = require("../assets/images/icons/personal.png");
+const item = require("../assets/images/icons/item.png");
+const lock = require("../assets/images/icons/lock.png");
+const locklogo = require("../assets/images/icons/locklogo.png");
+const faq = require("../assets/images/icons/faq.png");
+const help = require("../assets/images/icons/help.png");
+const term = require("../assets/images/icons/term.png");
+const Pgreen = require("../assets/images/icons/Pgreen.png");
+const Pred = require("../assets/images/icons/Pred.png");
+const location = require("../assets/images/icons/location.png");
+const adbanner = require("../assets/images/icons/adbanner.png");
+const send = require("../assets/images/icons/send.png");
+
+const logout = require("../assets/images/icons/logout.png");
 export default {
   logo,
   logox,
+  language,
+  favorite,
+  location,
+  adbanner,
+  web,
+  send,
+  mail,
+  personal,
+  Pgreen,
+  Pred,
+  item,
+  lock,
+  locklogo,
+  faq,
+  help,
+  term,
+  logout,
   onb1,
   onb2,
   prt1,

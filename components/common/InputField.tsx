@@ -1,43 +1,72 @@
-import React, { useState } from "react";
+import React from "react";
 import {
-  Image,
-  KeyboardAvoidingView,
-  TouchableOpacity,
   StyleSheet,
   View,
-  Text,
   TextInput,
+  TextInputProps,
+  ViewStyle,
 } from "react-native";
 import { RFPercentage } from "react-native-responsive-fontsize";
 
-//config
-import Colors from "../config/Colors";
-import { FontFamily } from "../config/font";
+// config
+import { Colors } from "../../constants/Colors";
+import { FontFamily } from "../../constants/font";
+import { fontSize } from "@/constants/fontUtils";
 
-export default function InputField({ placeTitle, value, onChange }) {
+type InputFieldProps = {
+  placeTitle: string;
+  value: string;
+  onChangeText: (text: string) => void;
+  containerStyle?: ViewStyle; // 👈 new prop
+} & TextInputProps;
+
+const InputField: React.FC<InputFieldProps> = ({
+  placeTitle,
+  value,
+  onChangeText,
+  containerStyle,
+  ...rest
+}) => {
   return (
-    <View style={styles.emailmain}>
+    <View style={[styles.emailmain, containerStyle]}>
       <TextInput
-        onChangeText={onChange}
+        style={[
+          styles.input,
+          rest.multiline && {
+            textAlignVertical: "top",
+            width: "95%",
+            height: "90%",
+          },
+        ]}
+        onChangeText={onChangeText}
         value={value}
+        autoCapitalize="none"
         placeholder={placeTitle}
         placeholderTextColor={Colors.placeholder}
+        {...rest}
       />
     </View>
   );
-}
+};
+
+export default InputField;
+
 const styles = StyleSheet.create({
   emailmain: {
     width: "90%",
-    height: RFPercentage(6.5),
+    height: fontSize(50),
     backgroundColor: Colors.white,
     borderWidth: RFPercentage(0.1),
-    borderRadius: RFPercentage(1),
-    borderColor: Colors.primary,
+    borderColor: Colors.stroke,
     color: Colors.blacky,
-    paddingHorizontal: RFPercentage(1.5),
+    paddingLeft: RFPercentage(2.5),
+    borderRadius: RFPercentage(1),
     justifyContent: "center",
-    marginTop: RFPercentage(1),
   },
-  input: { fontFamily: FontFamily.regular },
+  input: {
+    width: "70%",
+    fontFamily: FontFamily.regular,
+    color: Colors.lightBlack,
+    fontSize: fontSize(12),
+  },
 });

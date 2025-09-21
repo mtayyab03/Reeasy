@@ -3,16 +3,15 @@ import React from "react";
 
 import { HapticTab } from "@/components/haptic-tab";
 import { IconSymbol } from "@/components/ui/icon-symbol";
-import { Colors } from "@/constants/theme";
-import { useColorScheme } from "@/hooks/use-color-scheme";
+import { Ionicons, MaterialIcons } from "@expo/vector-icons";
+
+import { Colors } from "@/constants/Colors";
 
 export default function TabLayout() {
-  const colorScheme = useColorScheme();
-
   return (
     <Tabs
       screenOptions={{
-        tabBarActiveTintColor: Colors[colorScheme ?? "light"].tint,
+        tabBarActiveTintColor: Colors.lightBlue,
         headerShown: false,
         tabBarButton: HapticTab,
       }}
@@ -32,7 +31,7 @@ export default function TabLayout() {
         options={{
           title: "Schedule",
           tabBarIcon: ({ color }) => (
-            <IconSymbol size={28} name="paperplane.fill" color={color} />
+            <MaterialIcons size={28} name="calendar-month" color={color} />
           ),
         }}
       />
@@ -41,7 +40,7 @@ export default function TabLayout() {
         options={{
           title: "AddItem",
           tabBarIcon: ({ color }) => (
-            <IconSymbol size={28} name="paperplane.fill" color={color} />
+            <Ionicons size={30} name="add-circle-outline" color={color} />
           ),
         }}
       />
@@ -51,7 +50,11 @@ export default function TabLayout() {
         options={{
           title: "Chat",
           tabBarIcon: ({ color }) => (
-            <IconSymbol size={28} name="paperplane.fill" color={color} />
+            <Ionicons
+              size={28}
+              name="chatbubble-ellipses-outline"
+              color={color}
+            />
           ),
         }}
       />
@@ -60,7 +63,7 @@ export default function TabLayout() {
         options={{
           title: "Profile",
           tabBarIcon: ({ color }) => (
-            <IconSymbol size={28} name="paperplane.fill" color={color} />
+            <Ionicons size={28} name="person-circle-outline" color={color} />
           ),
         }}
       />

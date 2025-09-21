@@ -11,7 +11,7 @@ export default function AppLine() {
       style={{
         width: "100%",
         height: RFPercentage(0.1),
-        backgroundColor: Colors.lightBlack,
+        backgroundColor: Colors.stroke,
         borderRadius: RFPercentage(0.5),
         marginVertical: RFPercentage(1),
       }}

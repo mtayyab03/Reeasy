@@ -14,14 +14,14 @@ import { useRouter } from "expo-router";
 import * as ImagePicker from "expo-image-picker";
 
 // Components
-import Screen from "../../components/common/Screen";
-import AppButton from "../../components/common/AppButton";
+import Screen from "@/components/common/Screen";
+import AppButton from "@/components/common/AppButton";
 import { ThemedText } from "@/components/themed-text";
 
 // constants
-import { Colors } from "../../constants/Colors";
-import { FontFamily } from "../../constants/font";
-import icons from "../../constants/icons";
+import { Colors } from "@/constants/Colors";
+import { FontFamily } from "@/constants/font";
+import icons from "@/constants/icons";
 import { fontSize } from "@/constants/fontUtils";
 
 const PersonalDetails = () => {
@@ -51,7 +51,7 @@ const PersonalDetails = () => {
   };
 
   const handleBack = () => {
-    router.replace("/(screens)/SignupScreen");
+    router.back();
   };
 
   const handleSignup = () => {
@@ -65,7 +65,7 @@ const PersonalDetails = () => {
       return;
     }
     Alert.alert("Success", "Sign up successful!");
-    router.replace("/(screens)/LoginScreen");
+    router.replace("/(screens)/Login/LoginScreen");
   };
   return (
     <Screen style={styles.screen}>

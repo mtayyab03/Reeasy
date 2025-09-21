@@ -13,13 +13,13 @@ import { AntDesign, Ionicons, Feather } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 
 // Components
-import Screen from "../../components/common/Screen";
-import AppButton from "../../components/common/AppButton";
+import Screen from "@/components/common/Screen";
+import AppButton from "@/components/common/AppButton";
 
 // constants
-import { Colors } from "../../constants/Colors";
-import { FontFamily } from "../../constants/font";
-import icons from "../../constants/icons";
+import { Colors } from "@/constants/Colors";
+import { FontFamily } from "@/constants/font";
+import icons from "@/constants/icons";
 import { fontSize } from "@/constants/fontUtils";
 
 export default function ForgetPassword() {
@@ -47,11 +47,11 @@ export default function ForgetPassword() {
     }
 
     // No API integration, just navigate to OTPScreen
-    router.replace({ pathname: "/(screens)/OTPScreen", params: { email } });
+    router.push({ pathname: "/(screens)/Login/OTPScreen", params: { email } });
   };
 
   const handleBack = () => {
-    router.replace("/(screens)/LoginScreen");
+    router.back();
   };
 
   return (

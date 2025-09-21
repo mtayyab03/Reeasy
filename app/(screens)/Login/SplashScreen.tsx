@@ -4,16 +4,16 @@ import { Image, StyleSheet, Text, View } from "react-native";
 import { RFPercentage } from "react-native-responsive-fontsize";
 
 // constants
-import { Colors } from "../../constants/Colors";
-import { FontFamily } from "../../constants/font";
-import icons from "../../constants/icons";
+import { Colors } from "@/constants/Colors";
+import { FontFamily } from "@/constants/font";
+import icons from "@/constants/icons";
 import { fontSize } from "@/constants/fontUtils";
 
 export default function SplashScreen() {
   const router = useRouter();
   useEffect(() => {
     const timer = setTimeout(() => {
-      router.push("/OnBoarding"); // Adjust path based on file location in app directory
+      router.push("/Login/OnBoarding"); // Adjust path based on file location in app directory
     }, 3000);
 
     return () => clearTimeout(timer);

@@ -13,14 +13,15 @@ import {
 import { RFPercentage } from "react-native-responsive-fontsize";
 import { AntDesign, Feather } from "@expo/vector-icons";
 import { useRoute, useNavigation, RouteProp } from "@react-navigation/native";
+
 // Components
-import Screen from "../../components/common/Screen";
-import AppButton from "../../components/common/AppButton";
+import Screen from "@/components/common/Screen";
+import AppButton from "@/components/common/AppButton";
 
 // constants
-import { Colors } from "../../constants/Colors";
-import { FontFamily } from "../../constants/font";
-import icons from "../../constants/icons";
+import { Colors } from "@/constants/Colors";
+import { FontFamily } from "@/constants/font";
+import icons from "@/constants/icons";
 import { fontSize } from "@/constants/fontUtils";
 
 type OTPRouteParams = {
@@ -55,7 +56,7 @@ export default function OTPScreen() {
     if (otp.every((digit) => digit.length > 0)) {
       // No API integration, just navigate
       router.replace({
-        pathname: "/(screens)/ResetPassword",
+        pathname: "/(screens)/Login/ResetPassword",
         params: { email },
       });
     } else {
@@ -63,12 +64,11 @@ export default function OTPScreen() {
     }
   };
   const handleBack = () => {
-    router.replace("/(screens)/LoginScreen");
+    router.back();
   };
 
   return (
     <Screen style={styles.screen}>
-      {/* arrow icon */}
       {/* arrow icon */}
       <View style={styles.arrowContainer}>
         <TouchableOpacity
@@ -163,7 +163,7 @@ export default function OTPScreen() {
 
         <TouchableOpacity
           onPress={() => {
-            router.replace("/(screens)/ForgetPassword");
+            router.replace("/(screens)/Login/ForgetPassword");
           }}
           activeOpacity={0.7}
         >

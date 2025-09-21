@@ -34,40 +34,85 @@ export default function RootLayout() {
 
   return (
     <ThemeProvider value={colorScheme === "dark" ? DarkTheme : DefaultTheme}>
-      <Stack initialRouteName="(screens)/SplashScreen">
+      <Stack initialRouteName="(screens)/Login/SplashScreen">
         <Stack.Screen
-          name="(screens)/SplashScreen"
+          name="(screens)/Login/SplashScreen"
           options={{ headerShown: false }}
         />
         <Stack.Screen
-          name="(screens)/OnBoarding"
+          name="(screens)/Login/OnBoarding"
           options={{ headerShown: false }}
         />
         <Stack.Screen
-          name="(screens)/LoginScreen"
+          name="(screens)/Login/LoginScreen"
           options={{ headerShown: false }}
         />
         <Stack.Screen
-          name="(screens)/SignupScreen"
+          name="(screens)/Login/SignupScreen"
           options={{ headerShown: false }}
         />
         <Stack.Screen
-          name="(screens)/PersonalDetails"
+          name="(screens)/Login/PersonalDetails"
           options={{ headerShown: false }}
         />
         <Stack.Screen
-          name="(screens)/ForgetPassword"
+          name="(screens)/Login/ForgetPassword"
           options={{ headerShown: false }}
         />
         <Stack.Screen
-          name="(screens)/OTPScreen"
+          name="(screens)/Login/OTPScreen"
           options={{ headerShown: false }}
         />
         <Stack.Screen
-          name="(screens)/ResetPassword"
+          name="(screens)/Login/ResetPassword"
           options={{ headerShown: false }}
         />
+
+        {/* Main */}
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+        <Stack.Screen
+          name="(screens)/Main/ItemDetails"
+          options={{ headerShown: false }}
+        />
+        <Stack.Screen
+          name="(screens)/Main/EventMapListView"
+          options={{ headerShown: false }}
+        />
+        <Stack.Screen
+          name="(screens)/Main/ChatScreen"
+          options={{ headerShown: false }}
+        />
+
+        {/* Screen */}
+        <Stack.Screen
+          name="(screens)/Profile/EditPersonalDetails"
+          options={{ headerShown: false }}
+        />
+        <Stack.Screen
+          name="(screens)/Profile/MyItems"
+          options={{ headerShown: false }}
+        />
+        <Stack.Screen
+          name="(screens)/Profile/FavoriteScreen"
+          options={{ headerShown: false }}
+        />
+        <Stack.Screen
+          name="(screens)/Profile/ChangePassword"
+          options={{ headerShown: false }}
+        />
+        <Stack.Screen
+          name="(screens)/Profile/Languages"
+          options={{ headerShown: false }}
+        />
+        <Stack.Screen
+          name="(screens)/Profile/SupportScreen"
+          options={{ headerShown: false }}
+        />
+        <Stack.Screen
+          name="(screens)/Profile/TermsCondition"
+          options={{ headerShown: false }}
+        />
+
         <Stack.Screen
           name="modal"
           options={{ presentation: "modal", title: "Modal" }}

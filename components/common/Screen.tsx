@@ -1,11 +1,6 @@
 import React, { ReactNode } from "react";
-import {
-  SafeAreaView,
-  StatusBar,
-  StyleProp,
-  StyleSheet,
-  ViewStyle,
-} from "react-native";
+import { StatusBar, StyleProp, StyleSheet, ViewStyle } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 //config
 import { Colors } from "../../constants/Colors";

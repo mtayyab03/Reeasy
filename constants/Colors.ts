@@ -36,7 +36,8 @@ export const Colors = {
   green: "#4CA054",
   blue: "#1A73E8",
   red: "#EB4335",
-  lightGrey: "#B0B4BD",
   grey: "#959595",
   stroke: "#E6E6E6",
+  placeholder: "#A9A6A6",
+  lightGrey: "#999",
 };
