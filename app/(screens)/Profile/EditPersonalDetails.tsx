@@ -103,9 +103,9 @@ const EditPersonalDetails = () => {
       return;
     }
 
-    Alert.alert("Sign up successful!");
+    Alert.alert("Edit successful!");
 
-    router.replace("/(screens)/Login/LoginScreen");
+    router.back();
   };
 
   return (

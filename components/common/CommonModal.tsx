@@ -47,6 +47,7 @@ const CommonModal: React.FC<CommonModalProps> = ({
       modalVisible={isModalVisible}
       setModalVisible={setIsModalVisible}
       style={styles.modalContainer}
+      RecStyle={{ width: "80%" }}
     >
       {/* Image at top */}
       <View

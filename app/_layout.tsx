@@ -93,6 +93,10 @@ export default function RootLayout() {
           options={{ headerShown: false }}
         />
         <Stack.Screen
+          name="(screens)/Profile/ItemEdit"
+          options={{ headerShown: false }}
+        />
+        <Stack.Screen
           name="(screens)/Profile/FavoriteScreen"
           options={{ headerShown: false }}
         />

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   TouchableOpacity,
   StyleSheet,
@@ -22,13 +22,15 @@ import AppButton from "@/components/common/AppButton";
 import InputField from "@/components/common/InputField";
 import CustomAlert from "@/components/common/CustomAlert";
 import { ThemedText } from "@/components/themed-text";
+import AppHeader from "@/components/common/AppHeader";
+
 // constants
 import { Colors } from "@/constants/Colors";
 import { FontFamily } from "@/constants/font";
 import icons from "@/constants/icons";
 import { fontSize } from "@/constants/fontUtils";
 
-const AddItem = () => {
+const ItemEdit = () => {
   const router = useRouter(); // ✅ get router instance
   const [price, setPrice] = useState<string>("");
   const [bedrooms, setBedrooms] = useState<string>("");
@@ -39,7 +41,6 @@ const AddItem = () => {
   const [address, setAddress] = useState<string>("");
   const [description, setDescription] = useState<string>("");
   const [selectedType, setSelectedType] = useState<string>("Single fam");
-  const [isChecked, setIsChecked] = useState(false);
   const propertyTypes = ["Single fam", "Condo", "Townhouse", "Multi Family"];
   const additionFeature = ["Pool", "Garage", "Water Front"];
   const [selectedFeatures, setSelectedFeatures] = useState<string[]>([]);
@@ -125,6 +126,48 @@ const AddItem = () => {
       setSelectedFeatures([...selectedFeatures, feature]);
     }
   };
+
+  const handleBack = () => {
+    router.back();
+  };
+
+  const mockProperty = {
+    id: "12345",
+    price: 250000,
+    bedrooms: 3,
+    fullBath: 2,
+    halfBath: 1,
+    livingAreaSize: 1800,
+    yearBuilt: 2015,
+    address: "123 Main Street, Mandi Bahauddin, Punjab, Pakistan",
+    description:
+      "Beautiful single-family home with modern design, spacious living area, and nearby schools.",
+    type: "Single fam",
+    features: ["Pool", "Garage"],
+    openForAppointments: true,
+    images: [
+      "https://picsum.photos/200/300?random=1",
+      "https://picsum.photos/200/300?random=2",
+      "https://picsum.photos/200/300?random=3",
+    ],
+  };
+
+  // 🟢 Preload into state
+  useEffect(() => {
+    setPrice(mockProperty.price.toString());
+    setBedrooms(mockProperty.bedrooms.toString());
+    setFullBath(mockProperty.fullBath.toString());
+    setHalfBath(mockProperty.halfBath.toString());
+    setLivigAreaSize(mockProperty.livingAreaSize.toString());
+    setYearBuilt(mockProperty.yearBuilt.toString());
+    setAddress(mockProperty.address);
+    setDescription(mockProperty.description);
+    setSelectedType(mockProperty.type);
+    setSelectedFeatures(mockProperty.features);
+    setIsEnabledAppointment(mockProperty.openForAppointments);
+    setImages(mockProperty.images);
+  }, []);
+
   return (
     <Screen style={styles.screen}>
       <ScrollView
@@ -134,15 +177,7 @@ const AddItem = () => {
         style={{ width: "100%" }}
         showsVerticalScrollIndicator={false}
       >
-        <ThemedText
-          type="Black16Reg"
-          style={{
-            fontFamily: FontFamily.medium,
-            fontSize: fontSize(18),
-          }}
-        >
-          Add Property
-        </ThemedText>
+        <AppHeader title="Item Edit" onPress={() => handleBack()} />
 
         <ScrollView
           horizontal
@@ -373,7 +408,7 @@ const AddItem = () => {
   );
 };
 
-export default AddItem;
+export default ItemEdit;
 const styles = StyleSheet.create({
   screen: {
     flex: 1,

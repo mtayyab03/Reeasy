@@ -64,7 +64,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   input: {
-    width: "70%",
+    width: "90%",
     fontFamily: FontFamily.regular,
     color: Colors.lightBlack,
     fontSize: fontSize(12),
