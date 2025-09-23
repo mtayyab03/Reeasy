@@ -82,6 +82,10 @@ export default function RootLayout() {
           name="(screens)/Main/ChatScreen"
           options={{ headerShown: false }}
         />
+        <Stack.Screen
+          name="(screens)/Main/DriveToScreen"
+          options={{ headerShown: false }}
+        />
 
         {/* Screen */}
         <Stack.Screen

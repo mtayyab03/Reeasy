@@ -144,7 +144,7 @@ const styles = StyleSheet.create({
   },
   headerContainer: {
     width: "100%",
-    height: Platform.OS === "ios" ? RFPercentage(26) : RFPercentage(20),
+    height: Platform.OS === "ios" ? RFPercentage(26) : RFPercentage(30),
     alignItems: "center",
     justifyContent: "center",
     backgroundColor: Colors.blue,

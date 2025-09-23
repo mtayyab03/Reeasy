@@ -35,6 +35,8 @@ const send = require("../assets/images/icons/send.png");
 const house1 = require("../assets/images/icons/house1.png");
 const house2 = require("../assets/images/icons/house2.png");
 const house3 = require("../assets/images/icons/house3.png");
+const drivloc = require("../assets/images/icons/drivloc.png");
+const direc = require("../assets/images/icons/direc.png");
 
 const logout = require("../assets/images/icons/logout.png");
 export default {
@@ -50,6 +52,8 @@ export default {
   web,
   send,
   mail,
+  drivloc,
+  direc,
   personal,
   Pgreen,
   Pred,
