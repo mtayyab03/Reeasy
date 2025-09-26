@@ -139,6 +139,7 @@ const FavoriteScreen = () => {
             area={property.area}
             type={property.type}
             cardpage="favorite" // or "Favourite" based on requirement
+            onPressCard={() => router.push("/(screens)/Main/ItemDetails")}
             // onPress={() => router.push("/editproduct")}
           />
         ))}

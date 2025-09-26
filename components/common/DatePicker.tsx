@@ -1,5 +1,7 @@
-import { MaterialCommunityIcons } from "@expo/vector-icons";
-import DateTimePicker, { Event } from "@react-native-community/datetimepicker";
+import { MaterialIcons } from "@expo/vector-icons";
+import DateTimePicker, {
+  DateTimePickerEvent,
+} from "@react-native-community/datetimepicker";
 import React, { useEffect, useState } from "react";
 import {
   Modal,
@@ -17,22 +19,20 @@ import { Colors } from "@/constants/Colors";
 import { FontFamily } from "@/constants/font";
 
 interface DatePickerProps {
-  label?: string;
   placeholder?: string;
   value?: string;
   onDateChange?: (date: string) => void;
   onTimeChange?: (time: string) => void;
   isTimePicker?: boolean;
   error?: boolean;
-  setError?: (error: Record<string, boolean>) => void;
+  setError?: React.Dispatch<React.SetStateAction<Record<string, boolean>>>;
   borderColor?: string;
   width?: string | number;
   titleSize?: number;
-  icon?: string;
+  icon?: keyof typeof MaterialIcons.glyphMap;
 }
 
 const DatePicker: React.FC<DatePickerProps> = ({
-  label = "Starting Date",
   placeholder,
   value,
   onDateChange,
@@ -42,8 +42,7 @@ const DatePicker: React.FC<DatePickerProps> = ({
   setError,
   borderColor = Colors.darkGrey,
   width = "100%",
-  titleSize = RFPercentage(1.8),
-  icon = "calendar",
+  icon = "calendar-month",
 }) => {
   const [date, setDate] = useState<string>("");
   const [isDatePickerVisible, setDatePickerVisibility] =
@@ -111,16 +110,6 @@ const DatePicker: React.FC<DatePickerProps> = ({
 
   return (
     <View style={{ marginTop: RFPercentage(1) }}>
-      <Text
-        style={{
-          marginTop: RFPercentage(0.7),
-          color: Colors.blacky,
-          fontFamily: FontFamily.Regular,
-          fontSize: titleSize,
-        }}
-      >
-        {label}
-      </Text>
       <View
         style={{
           flexDirection: "row",
@@ -128,11 +117,10 @@ const DatePicker: React.FC<DatePickerProps> = ({
           backgroundColor: Colors.white,
           borderWidth: RFPercentage(0.1),
           borderColor: borderColor,
-          padding: RFPercentage(1.5),
+          padding: RFPercentage(1.8),
           alignItems: "center",
           borderRadius: RFPercentage(1),
           justifyContent: "space-between",
-          marginTop: RFPercentage(1),
         }}
       >
         <TextInput
@@ -148,7 +136,7 @@ const DatePicker: React.FC<DatePickerProps> = ({
           onPress={showDatePicker}
           style={styles.calendarIcon}
         >
-          <MaterialCommunityIcons name={icon} size={20} color={Colors.gray} />
+          <MaterialIcons name={icon} size={20} color={Colors.lightBlack} />
         </TouchableOpacity>
       </View>
 
@@ -161,7 +149,7 @@ const DatePicker: React.FC<DatePickerProps> = ({
                 mode={isTimePicker ? "time" : "date"}
                 display={isTimePicker ? "spinner" : "inline"}
                 minuteInterval={5}
-                onChange={(event: Event, date?: Date) => {
+                onChange={(event: DateTimePickerEvent, date?: Date) => {
                   if (date) handleConfirm(date);
                 }}
               />
@@ -175,7 +163,7 @@ const DatePicker: React.FC<DatePickerProps> = ({
             mode={isTimePicker ? "time" : "date"}
             display="default"
             minuteInterval={5}
-            onChange={(event: Event, date?: Date) => {
+            onChange={(event: DateTimePickerEvent, date?: Date) => {
               if (date) handleConfirm(date);
             }}
           />
@@ -190,7 +178,7 @@ const styles = StyleSheet.create({
     flex: 1,
     color: Colors.blacky,
     fontSize: RFPercentage(1.4),
-    fontFamily: FontFamily.Regular,
+    fontFamily: FontFamily.regular,
   },
   calendarIcon: {
     marginLeft: RFPercentage(1),

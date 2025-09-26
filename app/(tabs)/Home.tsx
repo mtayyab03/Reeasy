@@ -16,12 +16,12 @@ import { RFPercentage } from "react-native-responsive-fontsize";
 import { Feather, Ionicons } from "@expo/vector-icons";
 // Components
 import Screen from "@/components/common/Screen";
+import FilterModal from "@/components/Specific/FilterModal";
 
 // constants
 import { Colors } from "@/constants/Colors";
 import { FontFamily } from "@/constants/font";
 import icons from "@/constants/icons";
-import { fontSize } from "@/constants/fontUtils";
 
 type MarkerData = {
   id: string;
@@ -101,11 +101,14 @@ export default function Home() {
   const router = useRouter();
   const [selectedMarker, setSelectedMarker] = useState<MarkerData | null>(null);
   const [showBanner, setShowBanner] = useState(true);
+  const [isModalVisible, setIsModalVisible] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [userLocation, setUserLocation] = useState<{
     latitude: number;
     longitude: number;
   } | null>(null);
+  const propertyTypes = ["Single fam", "Condo", "Townhouse", "Multi Family"];
+  const additionFeature = ["Pool", "Garage", "Water Front"];
   const mapRef = useRef<MapView>(null);
 
   const initialRegion: Region = {
@@ -149,17 +152,20 @@ export default function Home() {
         initialRegion={initialRegion}
       >
         {markers.map((marker) => (
-          <Marker key={marker.id} coordinate={marker.coordinate}>
-            <TouchableOpacity
-              activeOpacity={0.7} // 👈 opacity effect on press
-              onPress={() => setSelectedMarker(marker)}
-            >
-              <Image
-                source={marker.icon}
-                style={{ width: 40, height: 40 }}
-                resizeMode="contain"
-              />
-            </TouchableOpacity>
+          <Marker
+            key={marker.id}
+            onPress={() => setSelectedMarker(marker)}
+            coordinate={marker.coordinate}
+          >
+            <Image
+              source={marker.icon}
+              style={{
+                width: 40,
+                height: 40,
+                opacity: selectedMarker?.id === marker.id ? 0.7 : 1,
+              }}
+              resizeMode="contain"
+            />
           </Marker>
         ))}
 
@@ -201,7 +207,7 @@ export default function Home() {
         <View style={styles.divider} />
 
         {/* Filter Icon */}
-        <TouchableOpacity onPress={() => console.log("Filter clicked")}>
+        <TouchableOpacity onPress={() => setIsModalVisible(true)}>
           <Ionicons
             name="options-outline"
             size={22}
@@ -293,11 +299,7 @@ export default function Home() {
               </View>
               <TouchableOpacity
                 style={styles.detailButton}
-                // onPress={() =>
-                //   router.push("/(screens)/Main/ItemDetails", {
-                //     marker: selectedMarker,
-                //   })
-                // }
+                onPress={() => router.push("/(screens)/Main/ItemDetails")}
               >
                 <Text
                   style={{ color: "white", fontFamily: FontFamily.semiBold }}
@@ -325,6 +327,14 @@ export default function Home() {
           List View
         </Text>
       </TouchableOpacity>
+
+      <FilterModal
+        modalVisible={isModalVisible}
+        setModalVisible={setIsModalVisible}
+        propertyTypes={propertyTypes}
+        additionFeature={additionFeature}
+        onSubmit={(filters) => console.log("filters:", filters)}
+      />
     </Screen>
   );
 }
@@ -384,6 +394,7 @@ const styles = StyleSheet.create({
     right: 0,
     alignItems: "center",
     justifyContent: "center",
+    zIndex: 2,
   },
   bottomCardInner: {
     width: "95%",
@@ -442,6 +453,7 @@ const styles = StyleSheet.create({
     width: "95%",
     justifyContent: "flex-end",
     alignItems: "flex-end",
+    zIndex: 1,
   },
   locationicon: {
     width: RFPercentage(4),

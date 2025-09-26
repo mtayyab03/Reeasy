@@ -86,8 +86,12 @@ export default function RootLayout() {
           name="(screens)/Main/DriveToScreen"
           options={{ headerShown: false }}
         />
+        <Stack.Screen
+          name="(screens)/Main/VisitSchedule"
+          options={{ headerShown: false }}
+        />
 
-        {/* Screen */}
+        {/* Profile */}
         <Stack.Screen
           name="(screens)/Profile/EditPersonalDetails"
           options={{ headerShown: false }}

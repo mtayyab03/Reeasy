@@ -37,6 +37,10 @@ const house2 = require("../assets/images/icons/house2.png");
 const house3 = require("../assets/images/icons/house3.png");
 const drivloc = require("../assets/images/icons/drivloc.png");
 const direc = require("../assets/images/icons/direc.png");
+const availb = require("../assets/images/icons/availb.png");
+const bed = require("../assets/images/icons/bed.png");
+const bath = require("../assets/images/icons/bath.png");
+const area = require("../assets/images/icons/area.png");
 
 const logout = require("../assets/images/icons/logout.png");
 export default {
@@ -49,6 +53,10 @@ export default {
   house1,
   house2,
   house3,
+  availb,
+  bed,
+  bath,
+  area,
   web,
   send,
   mail,

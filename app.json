@@ -9,7 +9,10 @@
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "config": {
+        "googleMapsApiKey": "AIzaSyDbPuqJ96Z93BSDauOCQqXTNfXVg2yA2DQ"
+      }
     },
     "android": {
       "adaptiveIcon": {
@@ -19,7 +22,19 @@
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
       },
       "edgeToEdgeEnabled": true,
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "package": "com.tayyabgondal.Reeasy",
+
+      "config": {
+        "googleMaps": {
+          "apiKey": "AIzaSyDbPuqJ96Z93BSDauOCQqXTNfXVg2yA2DQ"
+        }
+      },
+      "permissions": [
+        "ACCESS_COARSE_LOCATION",
+        "ACCESS_FINE_LOCATION",
+        "FOREGROUND_SERVICE"
+      ]
     },
     "web": {
       "output": "static",
@@ -43,6 +58,13 @@
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
-    }
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "05a70b22-b385-434d-93d0-508a5f5b5fbf"
+      }
+    },
+    "assetBundlePatterns": ["**/*"]
   }
 }

@@ -1,9 +1,17 @@
 import React, { useEffect, useState } from "react";
-import { TouchableOpacity, StyleSheet, View, Text, Image } from "react-native";
+import {
+  TouchableOpacity,
+  StyleSheet,
+  View,
+  Text,
+  Image,
+  ImageBackground,
+} from "react-native";
 import { RFPercentage } from "react-native-responsive-fontsize";
-import { Ionicons } from "@expo/vector-icons";
+import { Feather, Ionicons } from "@expo/vector-icons";
 import { useRouter, useLocalSearchParams } from "expo-router";
-import MapView, { Marker, Polyline } from "react-native-maps";
+import MapView, { Marker, Polyline, LatLng } from "react-native-maps";
+import polyline from "@mapbox/polyline";
 
 // Components
 import Screen from "@/components/common/Screen";
@@ -18,7 +26,8 @@ const DriveToScreen = () => {
   const router = useRouter();
   const { profileImage, name, type, address, latitude, longitude } =
     useLocalSearchParams();
-
+  const [showBanner, setShowBanner] = useState(true);
+  const [routeCoords, setRouteCoords] = useState<LatLng[]>([]);
   const selectedMarker = {
     id: 1,
     profileImage: "https://randomuser.me/api/portraits/men/32.jpg",
@@ -48,6 +57,49 @@ const DriveToScreen = () => {
   //   type: type as string,
   //   address: address as string,
   // };
+
+  const fetchRoute = async () => {
+    const origin = `${currentLocation.latitude},${currentLocation.longitude}`;
+    const dest = `${destination.latitude},${destination.longitude}`;
+    const API_KEY = "AIzaSyDbPuqJ96Z93BSDauOCQqXTNfXVg2yA2DQ"; // replace with your key
+
+    try {
+      const url = `https://maps.googleapis.com/maps/api/directions/json?origin=${origin}&destination=${dest}&key=${API_KEY}`;
+      console.log("Fetching route:", url);
+
+      const response = await fetch(url);
+      const data = await response.json();
+
+      console.log(
+        "Google Directions API response:",
+        JSON.stringify(data, null, 2)
+      );
+
+      if (data.status !== "OK") {
+        console.warn("Directions API error:", data.status, data.error_message);
+        return;
+      }
+
+      if (data.routes.length) {
+        const points = polyline.decode(data.routes[0].overview_polyline.points);
+        const coords = points.map((point: number[]) => ({
+          latitude: point[0],
+          longitude: point[1],
+        }));
+
+        console.log("Decoded coordinates:", coords.slice(0, 5), "..."); // show first 5
+        setRouteCoords(coords);
+      } else {
+        console.log("No routes found in response.");
+      }
+    } catch (error) {
+      console.error("Error fetching directions:", error);
+    }
+  };
+
+  useEffect(() => {
+    fetchRoute();
+  }, []);
 
   return (
     <View style={styles.screen}>
@@ -89,12 +141,42 @@ const DriveToScreen = () => {
         </Marker>
 
         {/* Route Polyline */}
-        <Polyline
-          coordinates={polylineCoords}
-          strokeColor={Colors.blue}
-          strokeWidth={4}
-        />
+        {routeCoords.length > 0 && (
+          <Polyline
+            coordinates={routeCoords}
+            strokeColor={Colors.blue}
+            strokeWidth={4}
+          />
+        )}
       </MapView>
+
+      {showBanner && (
+        <View style={styles.bannerContainer}>
+          <ImageBackground
+            source={icons.adbanner}
+            style={{
+              width: "100%",
+              alignItems: "flex-end",
+              height: RFPercentage(20),
+            }}
+          >
+            <TouchableOpacity
+              activeOpacity={0.7}
+              onPress={() => setShowBanner(false)} // close on X
+            >
+              <Feather
+                color={Colors.white}
+                style={{
+                  marginRight: RFPercentage(1.5),
+                  marginTop: RFPercentage(1),
+                }}
+                size={24}
+                name={"x"}
+              />
+            </TouchableOpacity>
+          </ImageBackground>
+        </View>
+      )}
 
       {/* Bottom Card */}
       <View
@@ -191,5 +273,15 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 6,
+  },
+  bannerContainer: {
+    position: "absolute",
+    top: 130,
+    left: 20,
+    right: 20,
+    shadowColor: "#000",
+    shadowOpacity: 0.2,
+    shadowRadius: 5,
+    elevation: 5,
   },
 });

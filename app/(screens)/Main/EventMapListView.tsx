@@ -10,11 +10,13 @@ import {
   ScrollView,
 } from "react-native";
 import { RFPercentage } from "react-native-responsive-fontsize";
-import { Ionicons } from "@expo/vector-icons";
+import { Feather, Ionicons, FontAwesome6 } from "@expo/vector-icons";
+
 // Components
 import Screen from "@/components/common/Screen";
 import AppHeader from "@/components/common/AppHeader";
 import ProductCard from "@/components/Specific/ProductCard";
+import FilterModal from "@/components/Specific/FilterModal";
 
 // constants
 import { Colors } from "@/constants/Colors";
@@ -88,6 +90,7 @@ const PropertyData: MarkerData[] = [
 
 const EventMapListView = () => {
   const router = useRouter();
+  const [isModalVisible, setIsModalVisible] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const handleBack = () => {
     router.back();
@@ -95,6 +98,9 @@ const EventMapListView = () => {
   const filteredProperties = PropertyData.filter((item) =>
     item.title.toLowerCase().includes(searchQuery.toLowerCase())
   );
+  const propertyTypes = ["Single fam", "Condo", "Townhouse", "Multi Family"];
+  const additionFeature = ["Pool", "Garage", "Water Front"];
+
   return (
     <Screen style={styles.screen}>
       <AppHeader title="Property List" onPress={() => handleBack()} />
@@ -123,7 +129,7 @@ const EventMapListView = () => {
         <View style={styles.divider} />
 
         {/* Filter Icon */}
-        <TouchableOpacity onPress={() => console.log("Filter clicked")}>
+        <TouchableOpacity onPress={() => setIsModalVisible(true)}>
           <Ionicons
             name="options-outline"
             size={22}
@@ -151,11 +157,19 @@ const EventMapListView = () => {
             price={property.price}
             area={property.area}
             type={property.type}
-            onPressCard={() => alert(`Viewing ${property.title}`)}
+            onPressCard={() => router.push("/(screens)/Main/ItemDetails")}
             sponsored={property.sponsored === "true"}
           />
         ))}
       </ScrollView>
+
+      <FilterModal
+        modalVisible={isModalVisible}
+        setModalVisible={setIsModalVisible}
+        propertyTypes={propertyTypes}
+        additionFeature={additionFeature}
+        onSubmit={(filters) => console.log("filters:", filters)}
+      />
 
       {/* list end */}
     </Screen>
@@ -216,5 +230,96 @@ const styles = StyleSheet.create({
     height: 20,
     backgroundColor: "#ccc",
     marginHorizontal: 5,
+  },
+  modalContainer: {
+    alignItems: "center",
+    justifyContent: "center",
+  },
+
+  //new
+  label: {
+    fontSize: RFPercentage(2),
+    fontFamily: FontFamily.medium,
+    color: Colors.lightBlack,
+    marginVertical: RFPercentage(1),
+  },
+  rangeRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: RFPercentage(1),
+  },
+  input: {
+    borderWidth: 1,
+    borderColor: Colors.stroke,
+    borderRadius: 5,
+    padding: 5,
+    minWidth: 70,
+    textAlign: "center",
+    marginHorizontal: 5,
+  },
+  rangeLabels: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginBottom: RFPercentage(2),
+  },
+  typeRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+  },
+  typeButton: {
+    flex: 1,
+    paddingVertical: 10,
+    marginHorizontal: 5,
+    borderRadius: 8,
+    backgroundColor: "#eee",
+    alignItems: "center",
+  },
+  typeText: {
+    fontSize: RFPercentage(1.8),
+    fontFamily: FontFamily.medium,
+    color: Colors.lightBlack,
+  },
+  featuresRow: {
+    flexDirection: "row",
+    marginVertical: 10,
+  },
+  featureItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginRight: 20,
+  },
+  featureText: {
+    marginLeft: 5,
+    fontSize: RFPercentage(1.8),
+    fontFamily: FontFamily.medium,
+    color: Colors.lightBlack,
+  },
+  buttonRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginTop: RFPercentage(4),
+  },
+  btn: {
+    flex: 1,
+    marginHorizontal: 5,
+    paddingVertical: 10,
+    borderRadius: 8,
+    alignItems: "center",
+  },
+  btnText: {
+    color: Colors.white,
+    fontFamily: FontFamily.semiBold,
+    fontSize: RFPercentage(2),
+  },
+  checkedContainer: {
+    width: RFPercentage(2),
+    height: RFPercentage(2),
+    borderWidth: 1,
+    borderColor: Colors.darkGrey,
+    borderRadius: 3,
+    alignItems: "center",
+    justifyContent: "center",
+    overflow: "hidden",
+    marginTop: RFPercentage(0.2),
   },
 });
