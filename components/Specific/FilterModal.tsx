@@ -16,6 +16,7 @@ import { Feather, Ionicons, FontAwesome6 } from "@expo/vector-icons";
 import AppModal from "@/components/common/AppModal";
 import RangeSelector from "@/components/common/RangeSelector";
 import { ThemedText } from "@/components/themed-text";
+import SavedFiltersModal from "./SavedFiltersModal";
 
 // constants
 import { Colors } from "@/constants/Colors";
@@ -42,6 +43,14 @@ export default function FilterModal({
 }: Props) {
   const [selectedType, setSelectedType] = useState<string | null>(null);
   const [selectedFeatures, setSelectedFeatures] = useState<string[]>([]);
+  const [isSavedModalVisible, setSavedModalVisible] = useState(false);
+  const [savedFilters, setSavedFilters] = useState<any[]>([]);
+  const handleSaveFilter = (newFilter: any) => {
+    setSavedFilters((prev) => [...prev, newFilter]);
+  };
+  const handleDeleteFilter = (id: string) => {
+    setSavedFilters((prev) => prev.filter((f) => f.id !== id));
+  };
 
   const handleToggle = (feature: string) => {
     setSelectedFeatures((prev) =>
@@ -50,7 +59,10 @@ export default function FilterModal({
         : [...prev, feature]
     );
   };
-
+  const handleApplyFilter = (filter: any) => {
+    console.log("Applying filter:", filter);
+    setSavedModalVisible(false);
+  };
   const handleSubmit = () => {
     const filters = {
       selectedType,
@@ -59,6 +71,22 @@ export default function FilterModal({
     };
     onSubmit?.(filters);
     setModalVisible(false);
+  };
+
+  const handleSave = () => {
+    const newFilter = {
+      id: Date.now().toString(),
+      name: `Filter ${new Date().toLocaleTimeString()}`,
+      type: selectedType,
+      features: selectedFeatures,
+    };
+
+    setSavedFilters((prev) => [...prev, newFilter]);
+    onSubmit?.(newFilter);
+
+    // Close filter modal and open saved modal
+    setModalVisible(false);
+    setSavedModalVisible(true);
   };
 
   return (
@@ -81,9 +109,24 @@ export default function FilterModal({
             style={{
               width: "100%",
               alignItems: "center",
-              justifyContent: "center",
+              justifyContent: "space-between",
+              flexDirection: "row",
             }}
           >
+            <TouchableOpacity
+              activeOpacity={0.7}
+              onPress={() => setSavedModalVisible(true)}
+            >
+              <Text
+                style={{
+                  fontFamily: FontFamily.medium,
+                  fontSize: fontSize(18),
+                  color: Colors.blue,
+                }}
+              >
+                Saved
+              </Text>
+            </TouchableOpacity>
             <Text
               style={[
                 styles.name,
@@ -94,7 +137,6 @@ export default function FilterModal({
             </Text>
             <TouchableOpacity
               activeOpacity={0.7}
-              style={{ position: "absolute", right: 0 }}
               onPress={() => setModalVisible(false)}
             >
               <Feather
@@ -208,6 +250,12 @@ export default function FilterModal({
             >
               <Text style={styles.btnText}>Cancel</Text>
             </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.btn, { backgroundColor: Colors.blue }]}
+              onPress={handleSave}
+            >
+              <Text style={styles.btnText}>Save Filter</Text>
+            </TouchableOpacity>
 
             <TouchableOpacity
               style={[styles.btn, { backgroundColor: Colors.blue }]}
@@ -218,6 +266,14 @@ export default function FilterModal({
           </View>
         </View>
       </ScrollView>
+
+      <SavedFiltersModal
+        modalVisible={isSavedModalVisible}
+        setModalVisible={setSavedModalVisible}
+        savedFilters={savedFilters}
+        onApply={handleApplyFilter}
+        onDelete={handleDeleteFilter}
+      />
     </AppModal>
   );
 }

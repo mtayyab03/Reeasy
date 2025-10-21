@@ -178,14 +178,10 @@ const AddItem = () => {
         </TouchableOpacity>
 
         {/* Add property details */}
-        <InputField
-          placeTitle="Enter the price"
-          value={price}
-          onChangeText={setPrice}
-        />
+        <InputField placeTitle="Price" value={price} onChangeText={setPrice} />
         <View style={{ marginTop: RFPercentage(1) }} />
         <InputField
-          placeTitle="Enter total bedrooms"
+          placeTitle="Total bedrooms"
           value={bedrooms}
           onChangeText={setBedrooms}
         />
@@ -200,7 +196,7 @@ const AddItem = () => {
         >
           <View style={{ width: "49%" }}>
             <InputField
-              placeTitle="Enter #full baths"
+              placeTitle="Full baths"
               value={fullBath}
               onChangeText={setFullBath}
               containerStyle={{ width: "100%", height: fontSize(43) }}
@@ -208,7 +204,7 @@ const AddItem = () => {
           </View>
           <View style={{ width: "49%" }}>
             <InputField
-              placeTitle="Enter #half baths"
+              placeTitle="Half baths"
               value={halfBath}
               onChangeText={setHalfBath}
               containerStyle={{ width: "100%", height: fontSize(43) }}
@@ -218,25 +214,25 @@ const AddItem = () => {
 
         <View style={{ marginTop: RFPercentage(1) }} />
         <InputField
-          placeTitle="Enter Sqft Living area"
+          placeTitle="Living area Sqft"
           value={livigAreaSize}
           onChangeText={setLivigAreaSize}
         />
         <View style={{ marginTop: RFPercentage(1) }} />
         <InputField
-          placeTitle="Enter Year Built"
+          placeTitle="Year Built"
           value={yearBuilt}
           onChangeText={setYearBuilt}
         />
         <View style={{ marginTop: RFPercentage(1) }} />
         <InputField
-          placeTitle="Enter complete address"
+          placeTitle="Complete address"
           value={address}
           onChangeText={setAddress}
         />
         <View style={{ marginTop: RFPercentage(1) }} />
         <InputField
-          placeTitle="Enter Description"
+          placeTitle="Description"
           value={description}
           onChangeText={setDescription}
           multiline

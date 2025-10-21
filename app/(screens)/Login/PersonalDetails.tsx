@@ -60,7 +60,7 @@ const PersonalDetails = () => {
       return;
     }
     // Phone number validation: only digits and at least 10 digits
-    if (!/^\d{10,}$/.test(phone)) {
+    if (!/^\d{9,}$/.test(phone)) {
       Alert.alert("Error", "Please enter a valid phone number");
       return;
     }
