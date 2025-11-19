@@ -5,9 +5,6 @@ import { RFPercentage } from "react-native-responsive-fontsize";
 
 // constants
 import { Colors } from "@/constants/Colors";
-import { FontFamily } from "@/constants/font";
-import icons from "@/constants/icons";
-import { fontSize } from "@/constants/fontUtils";
 
 // Components
 import Screen from "@/components/common/Screen";

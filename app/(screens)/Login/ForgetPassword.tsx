@@ -16,6 +16,9 @@ import { useRouter } from "expo-router";
 import Screen from "@/components/common/Screen";
 import AppButton from "@/components/common/AppButton";
 
+// apis
+import apiClient from "@/app/apis/apiClient";
+
 // constants
 import { Colors } from "@/constants/Colors";
 import { FontFamily } from "@/constants/font";
@@ -25,6 +28,7 @@ import { fontSize } from "@/constants/fontUtils";
 export default function ForgetPassword() {
   const router = useRouter();
   const [email, setEmail] = useState<string>("");
+  const [loading, setLoading] = useState<boolean>(false);
 
   const validateEmail = (email: string) => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -35,7 +39,7 @@ export default function ForgetPassword() {
     setEmail(text.toLowerCase());
   };
 
-  const handleForgetEmail = () => {
+  const handleForgetEmail = async () => {
     if (!email) {
       Alert.alert("Alert", "Please Provide your Email");
       return;
@@ -46,8 +50,43 @@ export default function ForgetPassword() {
       return;
     }
 
-    // No API integration, just navigate to OTPScreen
-    router.push({ pathname: "/(screens)/Login/OTPScreen", params: { email } });
+    try {
+      setLoading(true);
+      console.log("🔹 Sending forgot password request:", email);
+
+      const response = await apiClient.post("/api/auth/password/forgot", {
+        email,
+      });
+
+      console.log("🔹 API Response:", response.data);
+
+      if (response.status === 200 || response.status === 201) {
+        Alert.alert(
+          "Success",
+          response.data.message || "OTP sent to email successfully."
+        );
+
+        router.push({
+          pathname: "/(screens)/Login/OTPScreen",
+          params: { email, type: "forget" },
+        });
+      } else {
+        Alert.alert(
+          "Failed",
+          response.data.message || "Unable to send OTP right now."
+        );
+      }
+    } catch (error: any) {
+      console.log("❌ Forgot Password Error:", error.response || error.message);
+
+      Alert.alert(
+        "Error",
+        error.response?.data?.message ||
+          "Something went wrong. Please try again."
+      );
+    } finally {
+      setLoading(false); // ✅ Stop loading
+    }
   };
 
   const handleBack = () => {
@@ -126,7 +165,11 @@ export default function ForgetPassword() {
         activeOpacity={0.7}
         onPress={handleForgetEmail}
       >
-        <AppButton title="Send Code" buttonColor={Colors.blue} />
+        <AppButton
+          title="Send Code"
+          buttonColor={Colors.blue}
+          loading={loading}
+        />
       </TouchableOpacity>
     </Screen>
   );

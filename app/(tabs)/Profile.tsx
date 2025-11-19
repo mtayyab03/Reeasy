@@ -16,6 +16,11 @@ import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import Screen from "@/components/common/Screen";
 import CommonModal from "@/components/common/CommonModal";
 
+// redux
+import { useDispatch } from "react-redux";
+import type { AppDispatch } from "@/app/redux/store";
+import { clearTokensAsync } from "@/app/redux/features/authSlice";
+
 // constants
 import { Colors } from "@/constants/Colors";
 import { FontFamily } from "@/constants/font";
@@ -42,7 +47,18 @@ type ProfileScreenProps = {
 
 const Profile: React.FC<ProfileScreenProps> = () => {
   const router = useRouter();
+  const dispatch = useDispatch<AppDispatch>();
   const [isModalVisible, setIsModalVisible] = useState(false);
+
+  // Correct logout handler
+  const handleLogout = async () => {
+    try {
+      await dispatch(clearTokensAsync()).unwrap(); // clears Redux & AsyncStorage
+      router.replace("/(screens)/Login/LoginScreen"); // navigate to login
+    } catch (err) {
+      console.log("Logout failed:", err);
+    }
+  };
 
   return (
     <View style={styles.screen}>
@@ -124,7 +140,7 @@ const Profile: React.FC<ProfileScreenProps> = () => {
         }
         buttonpri={"Confirm"}
         buttonsec={"Cancel"}
-        onpressPri={() => router.replace("/(screens)/Login/LoginScreen")}
+        onpressPri={handleLogout}
         onpressSec={() => {
           setIsModalVisible(false);
         }}

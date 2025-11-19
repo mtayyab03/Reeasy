@@ -16,6 +16,14 @@ import { FontFamily } from "@/constants/font";
 import icons from "@/constants/icons";
 import { fontSize } from "@/constants/fontUtils";
 
+// API
+import apiClient from "@/app/apis/apiClient";
+
+// redux
+import { useDispatch } from "react-redux";
+import type { AppDispatch } from "@/app/redux/store";
+import { clearTokensAsync } from "@/app/redux/features/authSlice";
+
 // Components
 import Screen from "@/components/common/Screen";
 import AppButton from "@/components/common/AppButton";
@@ -29,11 +37,13 @@ type ChangePasswordProps = {
   };
 };
 
-const ChangePassword: React.FC<ChangePasswordProps> = ({ navigation }) => {
+const ChangePassword: React.FC<ChangePasswordProps> = () => {
   const router = useRouter();
+  const dispatch = useDispatch<AppDispatch>();
   const [oldPassword, setOldPassword] = useState<string>("");
   const [password, setPassword] = useState<string>("");
   const [confirmPassword, setConfirmPassword] = useState<string>("");
+  const [loading, setLoading] = useState<boolean>(false);
 
   const validatePassword = (pwd: string) => {
     const passwordRegex =
@@ -41,7 +51,7 @@ const ChangePassword: React.FC<ChangePasswordProps> = ({ navigation }) => {
     return passwordRegex.test(pwd);
   };
 
-  const handlePassword = () => {
+  const handlePassword = async () => {
     if (!password || !confirmPassword || !oldPassword) {
       Alert.alert("Alert", "Please fill all fields");
       return;
@@ -60,9 +70,45 @@ const ChangePassword: React.FC<ChangePasswordProps> = ({ navigation }) => {
       return;
     }
 
-    // Just simulate success without API
-    Alert.alert("Success", "Password updated successfully");
-    navigation.navigate("Profilescreen");
+    setLoading(true);
+
+    try {
+      const response = await apiClient.post("/api/auth/password/update", {
+        oldPassword,
+        newPassword: password,
+        confirmPassword,
+      });
+
+      if (response.status === 200 || response.status === 201) {
+        Alert.alert("Success", "Password updated successfully");
+        // Remove tokens from Redux & AsyncStorage
+        await dispatch(clearTokensAsync()).unwrap();
+
+        // Navigate to login
+        router.replace("/(screens)/Login/LoginScreen");
+      } else {
+        Alert.alert(
+          "Failed",
+          response.data.error || "Unable to update password. Try again."
+        );
+      }
+    } catch (error: any) {
+      console.log("❌ Change password error:", error.response || error.message);
+
+      const apiError = error.response?.data?.error;
+      if (apiError) {
+        const errorMessages = Object.values(apiError).join("\n");
+        Alert.alert("Error", errorMessages);
+      } else {
+        Alert.alert(
+          "Error",
+          error.response?.data?.message ||
+            "Something went wrong. Please try again."
+        );
+      }
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleBack = () => {
@@ -114,7 +160,11 @@ const ChangePassword: React.FC<ChangePasswordProps> = ({ navigation }) => {
         activeOpacity={0.7}
         onPress={handlePassword}
       >
-        <AppButton title="Update Password" buttonColor={Colors.blue} />
+        <AppButton
+          title="Update Password"
+          buttonColor={Colors.blue}
+          loading={loading}
+        />
       </TouchableOpacity>
     </Screen>
   );

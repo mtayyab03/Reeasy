@@ -30,6 +30,7 @@ import { fontSize } from "@/constants/fontUtils";
 
 const AddItem = () => {
   const router = useRouter(); // ✅ get router instance
+  const [title, setTitle] = useState<string>("");
   const [price, setPrice] = useState<string>("");
   const [bedrooms, setBedrooms] = useState<string>("");
   const [fullBath, setFullBath] = useState<string>("");
@@ -74,6 +75,10 @@ const AddItem = () => {
   const handleSubmit = () => {
     if (images.length < 2) {
       Alert.alert("Minimum Required", "Please add at least 2 images.");
+      return;
+    }
+    if (!title.trim()) {
+      Alert.alert("Missing Field", "Please enter the Title.");
       return;
     }
     if (!price.trim()) {
@@ -178,6 +183,8 @@ const AddItem = () => {
         </TouchableOpacity>
 
         {/* Add property details */}
+        <InputField placeTitle="Title" value={title} onChangeText={setTitle} />
+        <View style={{ marginTop: RFPercentage(1) }} />
         <InputField placeTitle="Price" value={price} onChangeText={setPrice} />
         <View style={{ marginTop: RFPercentage(1) }} />
         <InputField

@@ -19,6 +19,15 @@ import { Ionicons, Fontisto, MaterialCommunityIcons } from "@expo/vector-icons";
 import Screen from "@/components/common/Screen";
 import AppButton from "@/components/common/AppButton";
 
+// redux
+import { useDispatch, useSelector } from "react-redux";
+import { AppDispatch } from "@/app/redux/store";
+import {
+  login,
+  selectAuthStatus,
+  selectAuthError,
+} from "@/app/redux/features/authSlice";
+
 // constants
 import { Colors } from "@/constants/Colors";
 import { FontFamily } from "@/constants/font";
@@ -40,6 +49,9 @@ export default function LoginScreen(props: LoginScreenProps) {
   const router = useRouter();
   const [eyeIcon, setEyeIcon] = useState<boolean>(false);
   const [loading, setLoading] = useState<boolean>(false);
+  const dispatch = useDispatch<AppDispatch>();
+  const authStatus = useSelector(selectAuthStatus);
+  const authError = useSelector(selectAuthError);
 
   // Validation schema for email and password
   const validationSchema = yup.object().shape({
@@ -61,14 +73,41 @@ export default function LoginScreen(props: LoginScreenProps) {
   ) => {
     setLoading(true);
     try {
-      // Navigate to BottomTab screen on success
+      console.log("🔹 Attempting login with:", values);
 
-      router.replace("/(tabs)/Home");
+      const resultAction = await dispatch(
+        login({ email: values.email, password: values.password })
+      );
 
+      console.log("🔹 Result Action:", resultAction);
+
+      if (login.fulfilled.match(resultAction)) {
+        console.log("✅ Login successful!");
+        console.log("🔹 AccessToken:", resultAction.payload.accessToken);
+        console.log("🔹 RefreshToken:", resultAction.payload.refreshToken);
+
+        router.replace("/(tabs)/Home");
+      } else if (login.rejected.match(resultAction)) {
+        console.error("❌ Login rejected!");
+        console.error("Payload:", resultAction.payload);
+        console.error("Error:", resultAction.error);
+
+        Alert.alert(
+          "Login Failed",
+          resultAction.payload || resultAction.error.message || "Unknown error"
+        );
+      } else {
+        console.warn("⚠️ Login returned unexpected action:", resultAction);
+        Alert.alert("Login Failed", "Unexpected login result");
+      }
+    } catch (error: any) {
+      console.error("❌ Login exception:", error);
+      Alert.alert(
+        "Login Failed",
+        error.message || "Something went wrong. Please try again."
+      );
+    } finally {
       setLoading(false);
-    } catch (error) {
-      setLoading(false);
-      Alert.alert("Login Failed", "Please check your email and password.");
     }
   };
 

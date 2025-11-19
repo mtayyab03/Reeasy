@@ -16,7 +16,10 @@ import {
   Fontisto,
   MaterialCommunityIcons,
 } from "@expo/vector-icons";
-import { useRouter } from "expo-router";
+import { useRouter, useLocalSearchParams } from "expo-router";
+
+// apis
+import apiClient from "@/app/apis/apiClient";
 
 // Components
 import Screen from "@/components/common/Screen";
@@ -29,6 +32,7 @@ import icons from "@/constants/icons";
 import { fontSize } from "@/constants/fontUtils";
 export default function ResetPassword() {
   const router = useRouter();
+  const { email } = useLocalSearchParams();
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [eyeIcon, setEyeIcon] = useState(false);
@@ -39,23 +43,53 @@ export default function ResetPassword() {
   }>({});
 
   // ...in your handle function...
-  const handleResetPassword = () => {
+  const handleResetPassword = async () => {
     let newErrors: typeof errors = {};
+
     if (!password) {
       newErrors.password = "Password is required";
     } else if (password.length < 8) {
       newErrors.password = "Password must be at least 8 characters";
     }
+
     if (!confirmPassword) {
       newErrors.confirmPassword = "Confirm Password is required";
     } else if (confirmPassword !== password) {
       newErrors.confirmPassword = "Passwords do not match";
     }
+
     setErrors(newErrors);
 
-    if (Object.keys(newErrors).length === 0) {
+    // ❌ Stop if validation failed
+    if (Object.keys(newErrors).length > 0) return;
+
+    try {
+      console.log("📩 Sending Reset Request for:", email);
+
+      const body = {
+        email,
+        newPassword: password,
+        confirmPassword: confirmPassword,
+      };
+
+      console.log("📦 Body:", body);
+
+      const response = await apiClient.post("/api/auth/password/reset", body);
+
+      console.log("✅ Reset Response:", response.data);
+
       Alert.alert("Success", "Password reset successful!");
+
       router.replace("/(screens)/Login/LoginScreen");
+    } catch (error: any) {
+      console.log("❌ Reset Error:", error.response?.data || error.message);
+
+      Alert.alert(
+        "Failed",
+        error.response?.data?.message ||
+          error.response?.data?.error?.message ||
+          "Something went wrong"
+      );
     }
   };
 

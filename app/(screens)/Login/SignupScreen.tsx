@@ -17,7 +17,9 @@ import { Ionicons, Fontisto, MaterialCommunityIcons } from "@expo/vector-icons";
 // Components
 import Screen from "@/components/common/Screen";
 import AppButton from "@/components/common/AppButton";
-import { ThemedText } from "@/components/themed-text";
+
+// apis
+import apiClient from "@/app/apis/apiClient";
 
 // constants
 import { Colors } from "@/constants/Colors";
@@ -60,12 +62,43 @@ export default function SignupScreen() {
   ) => {
     setLoading(true);
     try {
-      // Simulate signup success
-      router.push("/(screens)/Login/PersonalDetails");
+      const response = await apiClient.post("/api/auth/signup", {
+        email: values.email,
+        password: values.password,
+        confirmPassword: values.confirmPassword,
+      });
+
+      if (response.status === 200 || response.status === 201) {
+        // Signup successful
+        setLoading(false);
+        router.push({
+          pathname: "/(screens)/Login/OTPScreen",
+          params: {
+            email: values.email,
+            type: "signup",
+          },
+        });
+        Alert.alert(
+          "Signup Success",
+          response.data.message || "Sigup Success."
+        );
+      } else {
+        // Some error from server
+        setLoading(false);
+        Alert.alert(
+          "Signup Failed",
+          response.data.error.email ||
+            "Please check your details and try again."
+        );
+      }
+    } catch (error: any) {
       setLoading(false);
-    } catch (error) {
-      setLoading(false);
-      Alert.alert("Signup Failed", "Please check your details and try again.");
+      console.log("Signup error:", error.response || error.message);
+      Alert.alert(
+        "Signup Failed",
+        error.response?.data?.error.email ||
+          "Please check your details and try again."
+      );
     }
   };
 
@@ -297,7 +330,7 @@ const styles = StyleSheet.create({
     borderRadius: RFPercentage(1),
   },
   input: {
-    width: "70%",
+    width: "80%",
     fontFamily: FontFamily.regular,
     color: Colors.lightBlack,
     fontSize: RFPercentage(2),

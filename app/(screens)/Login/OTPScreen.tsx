@@ -1,5 +1,5 @@
 import React, { useState, useRef } from "react";
-import { useRouter } from "expo-router";
+import { useRouter, useLocalSearchParams } from "expo-router";
 import {
   Image,
   KeyboardAvoidingView,
@@ -18,6 +18,9 @@ import { useRoute, useNavigation, RouteProp } from "@react-navigation/native";
 import Screen from "@/components/common/Screen";
 import AppButton from "@/components/common/AppButton";
 
+// apis
+import apiClient from "@/app/apis/apiClient";
+
 // constants
 import { Colors } from "@/constants/Colors";
 import { FontFamily } from "@/constants/font";
@@ -31,7 +34,10 @@ type OTPRouteParams = {
 export default function OTPScreen() {
   const router = useRouter();
   const route = useRoute<RouteProp<{ params: OTPRouteParams }, "params">>();
-  const email = (route.params as OTPRouteParams)?.email;
+  const { email, type } = useLocalSearchParams();
+
+  console.log("Came from:", type); // signup OR forgot
+  console.log("Email:", email);
   const [otp, setOTP] = useState<string[]>(["", "", "", "", "", ""]);
   const inputRefs = useRef<Array<TextInput | null>>([]);
 
@@ -51,18 +57,114 @@ export default function OTPScreen() {
       inputRefs.current[index - 1]?.focus();
     }
   };
+  const handleResendOTP = async () => {
+    if (!email) {
+      Alert.alert("Error", "Email is missing");
+      return;
+    }
 
-  const handleSubmit = () => {
-    if (otp.every((digit) => digit.length > 0)) {
-      // No API integration, just navigate
-      router.replace({
-        pathname: "/(screens)/Login/ResetPassword",
-        params: { email },
-      });
-    } else {
-      Alert.alert("Alert", "Please enter the complete OTP");
+    try {
+      console.log("🔹 Resending OTP to:", email);
+
+      const response = await apiClient.post("/api/auth/otp-resend", { email });
+
+      console.log("🔹 Resend OTP response:", response.data);
+
+      if (response.status === 200 || response.status === 201) {
+        Alert.alert("✅ OTP sent successfully", `Check your email: ${email}`);
+      } else {
+        Alert.alert(
+          "Failed",
+          response.data?.error?.message || "Failed to resend OTP"
+        );
+      }
+    } catch (error: any) {
+      console.log(
+        "❌ Resend OTP error:",
+        error.response?.data || error.message
+      );
+      Alert.alert(
+        "Error",
+        error.response?.data?.error?.message || "Something went wrong"
+      );
     }
   };
+
+  const handleSubmit = async () => {
+    console.log("🔹 handleSubmit triggered");
+    const code = otp.join("");
+    console.log("🔹 OTP entered:", code);
+
+    if (code.length < 6) {
+      console.log("❌ OTP incomplete");
+      Alert.alert("Alert", "Please enter complete OTP");
+      return;
+    }
+
+    try {
+      console.log("🔹 Email:", email);
+      console.log("🔹 Type:", type);
+
+      let endpoint = "";
+      let body = { email, otp: Number(code) };
+
+      if (type === "signup") {
+        endpoint = "/api/auth/otp-verify";
+      } else {
+        endpoint = "/api/auth/password/otp-verify";
+      }
+
+      console.log("🔹 API Endpoint:", endpoint);
+      console.log("🔹 Request Body:", body);
+
+      const response = await apiClient.post(endpoint, body);
+
+      console.log("🔹 API Response (raw):", response);
+      console.log("🔹 API Response Data:", response.data);
+
+      if (response.status === 200 || response.status === 201) {
+        Alert.alert("✅ OTP Verified Successfully");
+
+        if (type === "signup") {
+          const accessToken = response?.data?.data?.accessToken;
+          console.log("🔹 Signup accessToken:", accessToken);
+
+          if (!accessToken) {
+            console.log("❌ accessToken missing in signup response");
+          }
+
+          router.replace({
+            pathname: "/(screens)/Login/PersonalDetails",
+            params: { token: accessToken, email },
+          });
+
+          console.log("➡ Navigated to PersonalDetails");
+        } else {
+          console.log("🔹 Forgot password flow…");
+
+          router.replace({
+            pathname: "/(screens)/Login/ResetPassword",
+            params: { email },
+          });
+
+          console.log("➡ Navigated to ResetPassword");
+        }
+      } else {
+        console.log("❌ OTP API returned status:", response.status);
+        Alert.alert("Failed", response.data.error.message || "Invalid OTP");
+      }
+    } catch (error: any) {
+      console.log("❌ OTP Error (full):", JSON.stringify(error, null, 2));
+      console.log("❌ OTP Error response:", error.response?.data);
+      console.log("❌ OTP Error message:", error.message);
+
+      Alert.alert(
+        "OTP Failed",
+        error.response?.data?.error.message || "Please try again"
+      );
+    }
+  };
+
   const handleBack = () => {
     router.back();
   };
@@ -161,12 +263,7 @@ export default function OTPScreen() {
           Don’t receive the OTP?
         </Text>
 
-        <TouchableOpacity
-          onPress={() => {
-            router.replace("/(screens)/Login/ForgetPassword");
-          }}
-          activeOpacity={0.7}
-        >
+        <TouchableOpacity onPress={handleResendOTP} activeOpacity={0.7}>
           <Text
             style={{
               fontSize: RFPercentage(1.4),

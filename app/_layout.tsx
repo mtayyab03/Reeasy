@@ -7,12 +7,10 @@ import { Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import "react-native-reanimated";
 import { useFonts } from "expo-font";
-
+import { Provider } from "react-redux";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 
-// export const unstable_settings = {
-//   anchor: "(tabs)",
-// };
+import { store } from "./redux/store";
 
 export default function RootLayout() {
   const colorScheme = useColorScheme();
@@ -33,104 +31,106 @@ export default function RootLayout() {
   }
 
   return (
-    <ThemeProvider value={colorScheme === "dark" ? DarkTheme : DefaultTheme}>
-      <Stack initialRouteName="(screens)/Login/SplashScreen">
-        <Stack.Screen
-          name="(screens)/Login/SplashScreen"
-          options={{ headerShown: false }}
-        />
-        <Stack.Screen
-          name="(screens)/Login/OnBoarding"
-          options={{ headerShown: false }}
-        />
-        <Stack.Screen
-          name="(screens)/Login/LoginScreen"
-          options={{ headerShown: false }}
-        />
-        <Stack.Screen
-          name="(screens)/Login/SignupScreen"
-          options={{ headerShown: false }}
-        />
-        <Stack.Screen
-          name="(screens)/Login/PersonalDetails"
-          options={{ headerShown: false }}
-        />
-        <Stack.Screen
-          name="(screens)/Login/ForgetPassword"
-          options={{ headerShown: false }}
-        />
-        <Stack.Screen
-          name="(screens)/Login/OTPScreen"
-          options={{ headerShown: false }}
-        />
-        <Stack.Screen
-          name="(screens)/Login/ResetPassword"
-          options={{ headerShown: false }}
-        />
+    <Provider store={store}>
+      <ThemeProvider value={colorScheme === "dark" ? DarkTheme : DefaultTheme}>
+        <Stack initialRouteName="(screens)/Login/SplashScreen">
+          <Stack.Screen
+            name="(screens)/Login/SplashScreen"
+            options={{ headerShown: false }}
+          />
+          <Stack.Screen
+            name="(screens)/Login/OnBoarding"
+            options={{ headerShown: false }}
+          />
+          <Stack.Screen
+            name="(screens)/Login/LoginScreen"
+            options={{ headerShown: false }}
+          />
+          <Stack.Screen
+            name="(screens)/Login/SignupScreen"
+            options={{ headerShown: false }}
+          />
+          <Stack.Screen
+            name="(screens)/Login/PersonalDetails"
+            options={{ headerShown: false }}
+          />
+          <Stack.Screen
+            name="(screens)/Login/ForgetPassword"
+            options={{ headerShown: false }}
+          />
+          <Stack.Screen
+            name="(screens)/Login/OTPScreen"
+            options={{ headerShown: false }}
+          />
+          <Stack.Screen
+            name="(screens)/Login/ResetPassword"
+            options={{ headerShown: false }}
+          />
 
-        {/* Main */}
-        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-        <Stack.Screen
-          name="(screens)/Main/ItemDetails"
-          options={{ headerShown: false }}
-        />
-        <Stack.Screen
-          name="(screens)/Main/EventMapListView"
-          options={{ headerShown: false }}
-        />
-        <Stack.Screen
-          name="(screens)/Main/ChatScreen"
-          options={{ headerShown: false }}
-        />
-        <Stack.Screen
-          name="(screens)/Main/DriveToScreen"
-          options={{ headerShown: false }}
-        />
-        <Stack.Screen
-          name="(screens)/Main/VisitSchedule"
-          options={{ headerShown: false }}
-        />
+          {/* Main */}
+          <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+          <Stack.Screen
+            name="(screens)/Main/ItemDetails"
+            options={{ headerShown: false }}
+          />
+          <Stack.Screen
+            name="(screens)/Main/EventMapListView"
+            options={{ headerShown: false }}
+          />
+          <Stack.Screen
+            name="(screens)/Main/ChatScreen"
+            options={{ headerShown: false }}
+          />
+          <Stack.Screen
+            name="(screens)/Main/DriveToScreen"
+            options={{ headerShown: false }}
+          />
+          <Stack.Screen
+            name="(screens)/Main/VisitSchedule"
+            options={{ headerShown: false }}
+          />
 
-        {/* Profile */}
-        <Stack.Screen
-          name="(screens)/Profile/EditPersonalDetails"
-          options={{ headerShown: false }}
-        />
-        <Stack.Screen
-          name="(screens)/Profile/MyItems"
-          options={{ headerShown: false }}
-        />
-        <Stack.Screen
-          name="(screens)/Profile/ItemEdit"
-          options={{ headerShown: false }}
-        />
-        <Stack.Screen
-          name="(screens)/Profile/FavoriteScreen"
-          options={{ headerShown: false }}
-        />
-        <Stack.Screen
-          name="(screens)/Profile/ChangePassword"
-          options={{ headerShown: false }}
-        />
-        <Stack.Screen
-          name="(screens)/Profile/Languages"
-          options={{ headerShown: false }}
-        />
-        <Stack.Screen
-          name="(screens)/Profile/SupportScreen"
-          options={{ headerShown: false }}
-        />
-        <Stack.Screen
-          name="(screens)/Profile/TermsCondition"
-          options={{ headerShown: false }}
-        />
+          {/* Profile */}
+          <Stack.Screen
+            name="(screens)/Profile/EditPersonalDetails"
+            options={{ headerShown: false }}
+          />
+          <Stack.Screen
+            name="(screens)/Profile/MyItems"
+            options={{ headerShown: false }}
+          />
+          <Stack.Screen
+            name="(screens)/Profile/ItemEdit"
+            options={{ headerShown: false }}
+          />
+          <Stack.Screen
+            name="(screens)/Profile/FavoriteScreen"
+            options={{ headerShown: false }}
+          />
+          <Stack.Screen
+            name="(screens)/Profile/ChangePassword"
+            options={{ headerShown: false }}
+          />
+          <Stack.Screen
+            name="(screens)/Profile/Languages"
+            options={{ headerShown: false }}
+          />
+          <Stack.Screen
+            name="(screens)/Profile/SupportScreen"
+            options={{ headerShown: false }}
+          />
+          <Stack.Screen
+            name="(screens)/Profile/TermsCondition"
+            options={{ headerShown: false }}
+          />
 
-        <Stack.Screen
-          name="modal"
-          options={{ presentation: "modal", title: "Modal" }}
-        />
-      </Stack>
-      <StatusBar style="auto" />
-    </ThemeProvider>
+          <Stack.Screen
+            name="modal"
+            options={{ presentation: "modal", title: "Modal" }}
+          />
+        </Stack>
+        <StatusBar style="auto" />
+      </ThemeProvider>
+    </Provider>
   );
 }
