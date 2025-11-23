@@ -15,18 +15,27 @@ import { FontAwesome6 } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import * as ImagePicker from "expo-image-picker";
 import { Ionicons } from "@expo/vector-icons";
-
+import PlacesInput from "@/components/common/PlacesInput";
 // Components
 import Screen from "@/components/common/Screen";
 import AppButton from "@/components/common/AppButton";
 import InputField from "@/components/common/InputField";
 import CustomAlert from "@/components/common/CustomAlert";
 import { ThemedText } from "@/components/themed-text";
+
+// API
+import apiClient from "@/app/apis/apiClient";
+
 // constants
 import { Colors } from "@/constants/Colors";
 import { FontFamily } from "@/constants/font";
 import icons from "@/constants/icons";
 import { fontSize } from "@/constants/fontUtils";
+
+interface Coordinates {
+  latitude: number | null;
+  longitude: number | null;
+}
 
 const AddItem = () => {
   const router = useRouter(); // ✅ get router instance
@@ -38,9 +47,12 @@ const AddItem = () => {
   const [livigAreaSize, setLivigAreaSize] = useState<string>("");
   const [yearBuilt, setYearBuilt] = useState<string>("");
   const [address, setAddress] = useState<string>("");
+  const [coordinates, setCoordinates] = useState<Coordinates>({
+    latitude: null,
+    longitude: null,
+  });
   const [description, setDescription] = useState<string>("");
   const [selectedType, setSelectedType] = useState<string>("Single fam");
-  const [isChecked, setIsChecked] = useState(false);
   const propertyTypes = ["Single fam", "Condo", "Townhouse", "Multi Family"];
   const additionFeature = ["Pool", "Garage", "Water Front"];
   const [selectedFeatures, setSelectedFeatures] = useState<string[]>([]);
@@ -72,55 +84,119 @@ const AddItem = () => {
   };
 
   // 📌 Validate min images
-  const handleSubmit = () => {
-    if (images.length < 2) {
+  const handleSubmit = async () => {
+    if (images.length < 1) {
       Alert.alert("Minimum Required", "Please add at least 2 images.");
       return;
     }
-    if (!title.trim()) {
-      Alert.alert("Missing Field", "Please enter the Title.");
+    // ✅ Validations
+    if (
+      !title.trim() ||
+      !price.trim() ||
+      !bedrooms.trim() ||
+      !fullBath.trim() ||
+      !halfBath.trim() ||
+      !livigAreaSize.trim() ||
+      !yearBuilt.trim() ||
+      !address.trim() ||
+      !description.trim()
+    ) {
+      Alert.alert("Missing Field", "Please fill all the required fields.");
       return;
     }
-    if (!price.trim()) {
-      Alert.alert("Missing Field", "Please enter the price.");
-      return;
-    }
-    if (!bedrooms.trim()) {
-      Alert.alert("Missing Field", "Please enter total bedrooms.");
-      return;
-    }
-    if (!fullBath.trim()) {
-      Alert.alert("Missing Field", "Please enter # full baths.");
-      return;
-    }
-    if (!halfBath.trim()) {
-      Alert.alert("Missing Field", "Please enter # half baths.");
-      return;
-    }
-    if (!livigAreaSize.trim()) {
-      Alert.alert("Missing Field", "Please enter Sqft living area.");
-      return;
-    }
-    if (!yearBuilt.trim()) {
-      Alert.alert("Missing Field", "Please enter Year Built.");
-      return;
-    }
-    if (!address.trim()) {
-      Alert.alert("Missing Field", "Please enter complete address.");
-      return;
-    }
-    if (!description.trim()) {
-      Alert.alert("Missing Field", "Please enter description.");
+    if (!coordinates.latitude || !coordinates.longitude) {
+      Alert.alert(
+        "Missing Field",
+        "Please select a valid address from suggestions."
+      );
       return;
     }
 
-    // ✅ If all validations pass
-    Alert.alert("Success", "Property submitted successfully!", [
-      {
-        text: "OK",
-        onPress: () => router.replace("/(tabs)/Home"), // 👈 go Home
-      },
-    ]);
+    // ✅ Prepare payload
+    const payload = {
+      title: title.trim(),
+      propertyType: selectedType,
+      price: price.trim(),
+      totalBedRooms: bedrooms.trim(),
+      fullBath: fullBath.trim(),
+      halfBath: halfBath.trim(),
+      area: livigAreaSize.trim(),
+      builtYear: yearBuilt.trim(),
+      address: address.trim(),
+      latlng: `[${coordinates.latitude}, ${coordinates.longitude}]`,
+      pool: selectedFeatures.includes("Pool"),
+      garage: selectedFeatures.includes("Garage"),
+      waterFront: selectedFeatures.includes("Water Front"),
+      appointmentOpen: isEnabledAppointment,
+      language: "en",
+      description: description.trim(),
+    };
+
+    try {
+      // 1️⃣ Create property
+      const response = await apiClient.post("/api/property", payload);
+      console.log("Property Response:", response.data);
+
+      const propertyUid = response.data.data.propertyUid;
+
+      if (!propertyUid) {
+        Alert.alert("Error", "Property UID not received from API.");
+        return;
+      }
+
+      // 2️⃣ Upload images
+      if (images.length > 0) {
+        // If API expects FormData for images:
+        const formData = new FormData();
+        images.forEach((uri, index) => {
+          const filename = uri.split("/").pop()!;
+          const match = /\.(\w+)$/.exec(filename);
+          const type = match ? `image/${match[1]}` : `image`;
+          formData.append("images", {
+            uri,
+            name: filename,
+            type,
+          } as any); // as any for React Native
+        });
+
+        const imageResponse = await apiClient.post(
+          `/api/property/image/${propertyUid}`,
+          formData,
+          {
+            headers: { "Content-Type": "multipart/form-data" },
+          }
+        );
+        console.log("Images uploaded:", imageResponse.data);
+      }
+
+      // 3️⃣ Success - navigate to Home
+      Alert.alert("Success", "Property submitted successfully!", [
+        {
+          text: "OK",
+          onPress: () => router.replace("/(tabs)/Home"),
+        },
+      ]);
+    } catch (error: any) {
+      if (error.response) {
+        // Server responded with a status other than 2xx
+        console.log("Status:", error.response.status);
+        console.log("Headers:", error.response.headers);
+        console.log("Data:", error.response.data); // <-- This usually contains detailed message
+      } else if (error.request) {
+        // Request was made but no response received
+        console.log("No response received:", error.request);
+      } else {
+        // Something else happened
+        console.log("Error:", error.message);
+      }
+
+      Alert.alert(
+        "Error",
+        `Failed to submit property. ${
+          error.response?.data?.message || error.message
+        }`
+      );
+    }
   };
 
   const handleToggle = (feature: string) => {
@@ -191,6 +267,7 @@ const AddItem = () => {
           placeTitle="Total bedrooms"
           value={bedrooms}
           onChangeText={setBedrooms}
+          numeric
         />
 
         <View
@@ -207,6 +284,7 @@ const AddItem = () => {
               value={fullBath}
               onChangeText={setFullBath}
               containerStyle={{ width: "100%", height: fontSize(43) }}
+              numeric
             />
           </View>
           <View style={{ width: "49%" }}>
@@ -215,6 +293,7 @@ const AddItem = () => {
               value={halfBath}
               onChangeText={setHalfBath}
               containerStyle={{ width: "100%", height: fontSize(43) }}
+              numeric
             />
           </View>
         </View>
@@ -224,19 +303,26 @@ const AddItem = () => {
           placeTitle="Living area Sqft"
           value={livigAreaSize}
           onChangeText={setLivigAreaSize}
+          numeric
         />
         <View style={{ marginTop: RFPercentage(1) }} />
         <InputField
           placeTitle="Year Built"
           value={yearBuilt}
           onChangeText={setYearBuilt}
+          numeric
         />
         <View style={{ marginTop: RFPercentage(1) }} />
-        <InputField
-          placeTitle="Complete address"
-          value={address}
-          onChangeText={setAddress}
+        <PlacesInput
+          onSelect={({ address, latitude, longitude }) => {
+            setAddress(address);
+            setCoordinates({ latitude, longitude });
+            console.log("Selected Address:", address);
+            console.log("Latitude:", latitude);
+            console.log("Longitude:", longitude);
+          }}
         />
+
         <View style={{ marginTop: RFPercentage(1) }} />
         <InputField
           placeTitle="Description"

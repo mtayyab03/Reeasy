@@ -34,6 +34,10 @@ const ProductCard: React.FC<ProductCardProps> = ({
   sponsored,
 }) => {
   const [isFavourite, setIsFavourite] = useState(true);
+  const capitalizeFirstLetter = (text: string) => {
+    if (!text) return "";
+    return text.charAt(0).toUpperCase() + text.slice(1);
+  };
   return (
     <TouchableOpacity
       activeOpacity={0.7}
@@ -43,7 +47,6 @@ const ProductCard: React.FC<ProductCardProps> = ({
       {/* Top Image */}
       <Image source={image} style={styles.cardImage} resizeMode="cover" />
 
-      {/* Sponsored / Card Page Label */}
       {/* Card Actions */}
       {cardpage === "favorite" && (
         <TouchableOpacity
@@ -80,7 +83,7 @@ const ProductCard: React.FC<ProductCardProps> = ({
         <View style={{ flex: 1 }}>
           {/* Title + Type */}
           <View style={{ flexDirection: "row", alignItems: "center" }}>
-            <Text style={styles.name}>{title}</Text>
+            <Text style={styles.name}>{capitalizeFirstLetter(title)}</Text>
             <View style={styles.typeTag}>
               <Text style={styles.typeText}>{type}</Text>
             </View>
@@ -122,6 +125,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     overflow: "hidden",
     marginTop: RFPercentage(1.5),
+    paddingBottom: RFPercentage(1),
   },
   favCircle: {
     position: "absolute",

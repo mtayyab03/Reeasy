@@ -1,6 +1,6 @@
 // screens/ItemDetails.tsx
-import React, { useState, useRef } from "react";
-import { useRouter } from "expo-router";
+import React, { useState, useRef, useEffect } from "react";
+import { useRouter, useLocalSearchParams } from "expo-router";
 import {
   View,
   Text,
@@ -15,13 +15,15 @@ import {
 } from "react-native";
 import { RFPercentage } from "react-native-responsive-fontsize";
 import { Ionicons } from "@expo/vector-icons";
-import MapView, { Marker, Region } from "react-native-maps";
-import * as Location from "expo-location";
+import MapView, { Marker } from "react-native-maps";
 
 //componenet
 import Screen from "@/components/common/Screen";
 import AppLine from "@/components/common/AppLine";
 import ReadMoreText from "@/components/common/ReadMoreText";
+
+// API
+import apiClient, { BASE_URL } from "@/app/apis/apiClient";
 
 //constants
 import { Colors } from "@/constants/Colors";
@@ -31,19 +33,19 @@ import { fontSize } from "@/constants/fontUtils";
 
 const { width } = Dimensions.get("window");
 
-//const images = [
-//  "https://picsum.photos/id/10/800/400",
-//  "https://picsum.photos/id/20/800/400",
-//  "https://picsum.photos/id/30/800/400",
-//  "https://picsum.photos/id/40/800/400",
-//];
-
 const ItemDetails = () => {
   const router = useRouter();
+  const { property } = useLocalSearchParams();
+  console.log("Previous screend data", property);
+  // Ensure we have a string
+  const propertyString = Array.isArray(property) ? property[0] : property;
+  const parsedProperty = propertyString ? JSON.parse(propertyString) : null;
+
+  const [propertyData, setPropertyData] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
   const [activeIndex, setActiveIndex] = useState(0);
   const [liked, setLiked] = useState(false);
   const flatListRef = useRef<FlatList>(null);
-  const images = [icons.house1, icons.house2, icons.house3];
 
   const handleScroll = (event: NativeSyntheticEvent<NativeScrollEvent>) => {
     const slide = Math.ceil(
@@ -54,20 +56,36 @@ const ItemDetails = () => {
       setActiveIndex(slide);
     }
   };
-  const currentLocation = {
-    latitude: 37.78825,
-    longitude: -122.4324,
-  };
 
-  const destination = {
-    latitude: 37.78925,
-    longitude: -122.4354,
-  };
+  const propertyLatLng = propertyData?.latlng
+    ? JSON.parse(propertyData.latlng)
+    : [37.78825, -122.4324]; // default
+  useEffect(() => {
+    const fetchProperty = async () => {
+      if (!parsedProperty?.uuid) return;
+      try {
+        const response = await apiClient.get(
+          `/api/property/${parsedProperty.uuid}?language=en`
+        );
+        if (response.data.success) {
+          setPropertyData(response.data.data);
+        }
+      } catch (error) {
+        console.error("Failed to fetch property details:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
 
-  const selectedMarker = {
-    name: "Sterlin Apartment",
-    address: "123 Demo Street, San Francisco",
-  };
+    fetchProperty();
+  }, [parsedProperty?.uuid]);
+
+  const images =
+    propertyData?.images?.length > 0
+      ? propertyData.images.map((img: { imageUrl: string }) => ({
+          uri: `${BASE_URL}${img.imageUrl}`,
+        }))
+      : [icons.house1];
 
   return (
     <Screen style={styles.screen}>
@@ -95,7 +113,7 @@ const ItemDetails = () => {
 
           {/* Dots Indicator */}
           <View style={styles.dotsContainer}>
-            {images.map((_, index) => (
+            {images.map((_: any, index: number) => (
               <View
                 key={index}
                 style={[
@@ -124,7 +142,9 @@ const ItemDetails = () => {
             {/* Available tag */}
             <View style={styles.availableTag}>
               <Image source={icons.availb} style={{ width: 28, height: 28 }} />
-              <Text style={styles.availableText}>Available</Text>
+              <Text style={styles.availableText}>
+                {propertyData?.appointmentOpen ? "Available" : "Not Available"}
+              </Text>
             </View>
 
             {/* Heart button */}
@@ -147,7 +167,10 @@ const ItemDetails = () => {
           <View style={{ flex: 1 }}>
             {/* Title + Type */}
             <View style={{ flexDirection: "row", alignItems: "center" }}>
-              <Text style={styles.name}>Sterlin Apartment</Text>
+              <Text style={styles.name}>
+                {propertyData?.title?.charAt(0).toUpperCase() +
+                  propertyData?.title?.slice(1)}
+              </Text>
             </View>
 
             {/* Address */}
@@ -159,12 +182,15 @@ const ItemDetails = () => {
                 style={{ marginRight: RFPercentage(0.3) }}
               />
               <Text style={[styles.details, { fontSize: fontSize(9) }]}>
-                Street no 3, Area 20, California, USA
+                {propertyData?.address}
               </Text>
             </View>
 
             <View style={styles.typeTag}>
-              <Text style={styles.typeText}>Multi Family</Text>
+              <Text style={styles.typeText}>
+                {propertyData?.propertyType?.charAt(0).toUpperCase() +
+                  propertyData?.propertyType?.slice(1)}
+              </Text>
             </View>
           </View>
 
@@ -179,7 +205,9 @@ const ItemDetails = () => {
               </Text>
             </TouchableOpacity>
             <View style={{ marginTop: RFPercentage(1) }} />
-            <Text style={styles.name}>$200,000</Text>
+            <Text style={styles.name}>
+              ${propertyData?.price.toLocaleString()}
+            </Text>
           </View>
         </View>
 
@@ -197,7 +225,7 @@ const ItemDetails = () => {
               <Image source={icons.bed} style={{ width: 24, height: 24 }} />
             </View>
             <Text style={[styles.name, { fontSize: fontSize(12) }]}>
-              5 beds
+              {propertyData?.totalBedRooms || 0} beds
             </Text>
           </View>
           <View style={styles.container}>
@@ -205,7 +233,7 @@ const ItemDetails = () => {
               <Image source={icons.bath} style={{ width: 24, height: 24 }} />
             </View>
             <Text style={[styles.name, { fontSize: fontSize(12) }]}>
-              3 Baths
+              {propertyData?.fullBath || 0} Baths
             </Text>
           </View>
           <View style={styles.container}>
@@ -213,7 +241,7 @@ const ItemDetails = () => {
               <Image source={icons.area} style={{ width: 24, height: 24 }} />
             </View>
             <Text style={[styles.name, { fontSize: fontSize(12) }]}>
-              2000 Sqft
+              {propertyData?.area || 0} Sqft
             </Text>
           </View>
         </View>
@@ -223,10 +251,19 @@ const ItemDetails = () => {
         </View>
 
         <View style={[styles.cardDetail, { marginTop: RFPercentage(0.2) }]}>
-          <Image source={icons.pf1} style={styles.profileImage} />
+          <Image
+            source={
+              propertyData?.user?.profilePic
+                ? { uri: `${BASE_URL}${propertyData.user.profilePic}` }
+                : icons.pf1
+            }
+            style={styles.profileImage}
+          />
           <View style={{ flex: 1, marginLeft: 10 }}>
             <Text style={[styles.name, { fontSize: fontSize(14) }]}>
-              Daisy Shah
+              {propertyData?.user?.fullName ||
+                propertyData?.user?.email ||
+                "Owner"}
             </Text>
             <Text style={styles.details}>Owner</Text>
           </View>
@@ -258,7 +295,9 @@ const ItemDetails = () => {
           <Text style={[styles.name, { fontSize: fontSize(14) }]}>
             Description
           </Text>
-          <ReadMoreText text="Lorem ipsum dolor sit amet consectetur. At et euismod viverra mauris enim at sed. Risus nibh porttitor tellus lobortis sit enim elit. Lorem ipsum dolor sit amet consectetur. At et euismod viverra mauris enim at sed. Risus nibh porttitor tellus lobortis sit enim elit." />
+          <ReadMoreText
+            text={propertyData?.description || "No description available"}
+          />
         </View>
 
         <View style={styles.bannerContainer}>
@@ -277,17 +316,20 @@ const ItemDetails = () => {
           <MapView
             style={styles.map}
             initialRegion={{
-              latitude: currentLocation.latitude,
-              longitude: currentLocation.longitude,
+              latitude: propertyLatLng[0],
+              longitude: propertyLatLng[1],
               latitudeDelta: 0.01,
               longitudeDelta: 0.01,
             }}
           >
             {/* Destination Marker */}
             <Marker
-              coordinate={destination}
-              title={selectedMarker?.name}
-              description={selectedMarker?.address}
+              coordinate={{
+                latitude: propertyLatLng[0],
+                longitude: propertyLatLng[1],
+              }}
+              title={propertyData?.title || "Property"}
+              description={propertyData?.address || ""}
             >
               <Image
                 source={icons.Pgreen}

@@ -18,6 +18,7 @@ type InputFieldProps = {
   value: string;
   onChangeText: (text: string) => void;
   containerStyle?: ViewStyle; // 👈 new prop
+  numeric?: boolean;
 } & TextInputProps;
 
 const InputField: React.FC<InputFieldProps> = ({
@@ -25,10 +26,20 @@ const InputField: React.FC<InputFieldProps> = ({
   value,
   onChangeText,
   containerStyle,
+  numeric = false,
   ...rest
 }) => {
+  const handleTextChange = (text: string) => {
+    if (numeric) {
+      // Remove any non-digit characters
+      const numericText = text.replace(/[^0-9]/g, "");
+      onChangeText(numericText);
+    } else {
+      onChangeText(text);
+    }
+  };
   return (
-    <View style={[styles.emailmain, containerStyle]}>
+    <View style={[styles.Inputmain, containerStyle]}>
       <TextInput
         style={[
           styles.input,
@@ -38,11 +49,12 @@ const InputField: React.FC<InputFieldProps> = ({
             height: "90%",
           },
         ]}
-        onChangeText={onChangeText}
+        onChangeText={handleTextChange}
         value={value}
         autoCapitalize="none"
         placeholder={placeTitle}
         placeholderTextColor={Colors.placeholder}
+        keyboardType={numeric ? "numeric" : "default"}
         {...rest}
       />
     </View>
@@ -52,7 +64,7 @@ const InputField: React.FC<InputFieldProps> = ({
 export default InputField;
 
 const styles = StyleSheet.create({
-  emailmain: {
+  Inputmain: {
     width: "90%",
     height: fontSize(50),
     backgroundColor: Colors.white,

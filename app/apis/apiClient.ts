@@ -1,5 +1,6 @@
 import axios from "axios";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+export const BASE_URL = "https://giveloans.com";
 
 // Create an Axios instance
 const apiClient = axios.create({

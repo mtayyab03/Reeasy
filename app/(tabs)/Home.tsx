@@ -1,5 +1,5 @@
 // screens/MapScreen.tsx
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { useRouter } from "expo-router";
 import {
   View,
@@ -18,84 +18,34 @@ import { Feather, Ionicons } from "@expo/vector-icons";
 import Screen from "@/components/common/Screen";
 import FilterModal from "@/components/Specific/FilterModal";
 
+// API
+import apiClient, { BASE_URL } from "@/app/apis/apiClient";
+
 // constants
 import { Colors } from "@/constants/Colors";
 import { FontFamily } from "@/constants/font";
 import icons from "@/constants/icons";
 
-type MarkerData = {
+// types
+type PropertyMarker = {
   id: string;
+  coordinate: { latitude: number; longitude: number };
+  uuid: string;
+  appointmentOpen: boolean;
+};
+
+type MarkerData = {
+  uuid: string;
   name: string;
+  title: string;
   type: string;
   address: string;
   coordinate: { latitude: number; longitude: number };
   profileImage: string;
   icon: any;
   status: "available" | "unavailable";
+  email: "string";
 };
-
-const markers: MarkerData[] = [
-  {
-    id: "1",
-    name: "John Doe",
-    type: "Single fam",
-    address: "123 Green St, New York",
-    coordinate: { latitude: 40.7128, longitude: -74.006 },
-    profileImage: "https://randomuser.me/api/portraits/men/1.jpg",
-    icon: icons.Pgreen,
-    status: "available",
-  },
-  {
-    id: "2",
-    name: "Jane Smith",
-    type: "Condo",
-    address: "456 Red Ave, New York",
-    coordinate: { latitude: 40.7138, longitude: -74.001 },
-    profileImage: "https://randomuser.me/api/portraits/women/2.jpg",
-    icon: icons.Pred,
-    status: "unavailable",
-  },
-  {
-    id: "3",
-    name: "Mercy Krov",
-    type: "Multi Family",
-    address: "456 Red Ave, New York",
-    coordinate: { latitude: 40.7258, longitude: -74.011 },
-    profileImage: "https://randomuser.me/api/portraits/women/3.jpg",
-    icon: icons.Pred,
-    status: "unavailable",
-  },
-  {
-    id: "4",
-    name: "Jone Snow",
-    type: "Condo",
-    address: "456 Red Ave, New York",
-    coordinate: { latitude: 40.7258, longitude: -74.001 },
-    profileImage: "https://randomuser.me/api/portraits/men/3.jpg",
-    icon: icons.Pgreen,
-    status: "available",
-  },
-  {
-    id: "5",
-    name: "Allen Virk",
-    type: "Town House",
-    address: "456 Red Ave, New York",
-    coordinate: { latitude: 40.7178, longitude: -73.992 },
-    profileImage: "https://randomuser.me/api/portraits/women/4.jpg",
-    icon: icons.Pgreen,
-    status: "available",
-  },
-  {
-    id: "6",
-    name: "Lemo Roge",
-    type: "Town House",
-    address: "456 Green Ave, California",
-    coordinate: { latitude: 40.7378, longitude: -73.992 },
-    profileImage: "https://randomuser.me/api/portraits/women/5.jpg",
-    icon: icons.Pred,
-    status: "unavailable",
-  },
-];
 
 export default function Home() {
   const router = useRouter();
@@ -110,6 +60,68 @@ export default function Home() {
   const propertyTypes = ["Single fam", "Condo", "Townhouse", "Multi Family"];
   const additionFeature = ["Pool", "Garage", "Water Front"];
   const mapRef = useRef<MapView>(null);
+
+  const [propertyMarkers, setPropertyMarkers] = useState<PropertyMarker[]>([]);
+  const [selectedMarkerData, setSelectedMarkerData] =
+    useState<MarkerData | null>(null);
+
+  // fetch UUIDs + coordinates
+  useEffect(() => {
+    const fetchProperties = async () => {
+      try {
+        const response = await apiClient.get("/api/property");
+        const data = response.data.data.properties;
+
+        const mappedMarkers: PropertyMarker[] = data.map((prop: any) => {
+          const latlng = JSON.parse(prop.latlng); // [lat, lng]
+          return {
+            id: prop.uuid,
+            uuid: prop.uuid,
+            coordinate: {
+              latitude: latlng[0],
+              longitude: latlng[1],
+            },
+            appointmentOpen: prop.appointmentOpen,
+          };
+        });
+        console.log("Mapped markers:", mappedMarkers);
+        setPropertyMarkers(mappedMarkers);
+      } catch (error) {
+        console.log("API Error:", error);
+      }
+    };
+
+    fetchProperties();
+  }, []);
+
+  // fetch marker details on select
+  const handleMarkerPress = async (marker: PropertyMarker) => {
+    try {
+      const response = await apiClient.get(
+        `/api/property/${marker.uuid}?language=en`
+      );
+      if (response.data.success) {
+        const prop = response.data.data;
+        console.log("Parsed property details:", prop);
+        setSelectedMarkerData({
+          uuid: prop.uuid,
+          title: prop.title,
+          type: prop.propertyType,
+          address: prop.address,
+          coordinate: JSON.parse(prop.latlng),
+          profileImage: prop.user?.profilePic
+            ? `${BASE_URL}${prop.user.profilePic}`
+            : icons.pf1,
+          name: prop.user?.fullName ? prop.user?.fullName : prop.user?.email,
+          email: prop.user?.email,
+          icon: prop.appointmentOpen ? icons.Pgreen : icons.Pred,
+          status: prop.appointmentOpen ? "available" : "unavailable",
+        });
+      }
+    } catch (error) {
+      console.log("Failed to fetch property details:", error);
+    }
+  };
 
   const initialRegion: Region = {
     latitude: 40.7128,
@@ -142,7 +154,10 @@ export default function Home() {
       1000
     );
   };
-
+  const capitalizeFirstLetter = (text: string) => {
+    if (!text) return "";
+    return text.charAt(0).toUpperCase() + text.slice(1);
+  };
   return (
     <Screen style={styles.screen}>
       {/* Map */}
@@ -151,18 +166,18 @@ export default function Home() {
         style={StyleSheet.absoluteFillObject}
         initialRegion={initialRegion}
       >
-        {markers.map((marker) => (
+        {propertyMarkers.map((marker) => (
           <Marker
             key={marker.id}
-            onPress={() => setSelectedMarker(marker)}
-            coordinate={marker.coordinate}
+            coordinate={marker.coordinate} // already {latitude, longitude}
+            onPress={() => handleMarkerPress(marker)}
           >
             <Image
-              source={marker.icon}
+              source={marker.appointmentOpen ? icons.Pgreen : icons.Pred} // dynamically pick icon based on appointmentOpen
               style={{
                 width: 40,
                 height: 40,
-                opacity: selectedMarker?.id === marker.id ? 0.7 : 1,
+                opacity: selectedMarker?.uuid === marker.id ? 0.7 : 1,
               }}
               resizeMode="contain"
             />
@@ -173,10 +188,7 @@ export default function Home() {
         {userLocation && (
           <Marker coordinate={userLocation}>
             <Image
-              source={
-                // status check for user icon
-                markers[0].status === "available" ? icons.Pgreen : icons.Pred
-              }
+              source={icons.Pgreen}
               style={{ width: 40, height: 40 }}
               resizeMode="contain"
             />
@@ -254,7 +266,7 @@ export default function Home() {
       </View>
 
       {/* Bottom Card */}
-      {selectedMarker && (
+      {selectedMarkerData && (
         <View style={styles.bottomCard}>
           <View style={styles.bottomCardInner}>
             <View
@@ -276,7 +288,7 @@ export default function Home() {
               </Text>
               <TouchableOpacity
                 activeOpacity={0.7}
-                onPress={() => setSelectedMarker(null)}
+                onPress={() => setSelectedMarkerData(null)}
               >
                 <Feather
                   color={Colors.lightBlack}
@@ -289,17 +301,32 @@ export default function Home() {
 
             <View style={styles.cardDetail}>
               <Image
-                source={{ uri: selectedMarker.profileImage }}
+                source={
+                  selectedMarkerData?.profileImage
+                    ? typeof selectedMarkerData.profileImage === "string"
+                      ? { uri: selectedMarkerData.profileImage }
+                      : selectedMarkerData.profileImage // local require()
+                    : icons.pf1
+                }
                 style={styles.profileImage}
               />
               <View style={{ flex: 1, marginLeft: 10 }}>
-                <Text style={styles.name}>{selectedMarker.name}</Text>
-                <Text style={styles.details}>{selectedMarker.type}</Text>
-                <Text style={styles.details}>{selectedMarker.address}</Text>
+                <Text style={styles.name}>
+                  {capitalizeFirstLetter(selectedMarkerData.name)}
+                </Text>
+                <Text style={[styles.details, { color: Colors.blue }]}>
+                  {capitalizeFirstLetter(selectedMarkerData.type)}
+                </Text>
+                <Text style={styles.details}>{selectedMarkerData.address}</Text>
               </View>
               <TouchableOpacity
                 style={styles.detailButton}
-                onPress={() => router.push("/(screens)/Main/ItemDetails")}
+                onPress={() =>
+                  router.push({
+                    pathname: "/(screens)/Main/ItemDetails",
+                    params: { property: JSON.stringify(selectedMarkerData) },
+                  })
+                }
               >
                 <Text
                   style={{ color: "white", fontFamily: FontFamily.semiBold }}
@@ -416,7 +443,7 @@ const styles = StyleSheet.create({
     borderRadius: 30,
   },
   name: {
-    fontSize: 18,
+    fontSize: 16,
     fontFamily: FontFamily.bold,
     color: Colors.lightBlack,
   },

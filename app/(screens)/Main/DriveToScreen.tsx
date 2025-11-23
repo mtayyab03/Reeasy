@@ -61,8 +61,7 @@ const DriveToScreen = () => {
   const fetchRoute = async () => {
     const origin = `${currentLocation.latitude},${currentLocation.longitude}`;
     const dest = `${destination.latitude},${destination.longitude}`;
-    const API_KEY = "AIzaSyDbPuqJ96Z93BSDauOCQqXTNfXVg2yA2DQ"; // replace with your key
-
+    const API_KEY = "AIzaSyDbPuqJ96Z93BSDauOCQqXTNfXVg2yA2DQ";
     try {
       const url = `https://maps.googleapis.com/maps/api/directions/json?origin=${origin}&destination=${dest}&key=${API_KEY}`;
       console.log("Fetching route:", url);

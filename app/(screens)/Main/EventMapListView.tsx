@@ -1,16 +1,17 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useEffect } from "react";
 import { useRouter } from "expo-router";
 import {
   View,
-  Text,
   TextInput,
-  Image,
   TouchableOpacity,
   StyleSheet,
   ScrollView,
 } from "react-native";
 import { RFPercentage } from "react-native-responsive-fontsize";
-import { Feather, Ionicons, FontAwesome6 } from "@expo/vector-icons";
+import { Ionicons } from "@expo/vector-icons";
+
+// API
+import apiClient, { BASE_URL } from "@/app/apis/apiClient";
 
 // Components
 import Screen from "@/components/common/Screen";
@@ -24,78 +25,57 @@ import { FontFamily } from "@/constants/font";
 import icons from "@/constants/icons";
 import { fontSize } from "@/constants/fontUtils";
 
-type MarkerData = {
-  id: string;
-  name: string;
-  type: string;
-  address: string;
-  price: string;
-  title: string;
-  area: string;
-  coordinate: { latitude: number; longitude: number };
-  profileImage: string;
-  icon: any;
-  propertyImg: any;
-  sponsored: string;
-  status: "available" | "unavailable";
+type PropertyImage = {
+  imageUrl: string;
 };
 
-const PropertyData: MarkerData[] = [
-  {
-    id: "1",
-    name: "John Doe",
-    type: "Single fam",
-    address: "123 Green St, New York",
-    coordinate: { latitude: 40.7128, longitude: -74.006 },
-    profileImage: "https://randomuser.me/api/portraits/men/1.jpg",
-    icon: icons.Pgreen,
-    propertyImg: icons.house1,
-    title: "Sterlin Apartmet",
-    price: "$200k",
-    area: "2200sqft",
-    sponsored: "true",
-    status: "available",
-  },
-  {
-    id: "2",
-    name: "Jane Smith",
-    type: "Condo",
-    address: "456 Red Ave, New York",
-    coordinate: { latitude: 40.7138, longitude: -74.001 },
-    profileImage: "https://randomuser.me/api/portraits/women/2.jpg",
-    icon: icons.Pred,
-    propertyImg: icons.house2,
-    title: "DHA liberty Villa",
-    price: "$550k",
-    area: "310sqft",
-    sponsored: "true",
-    status: "unavailable",
-  },
-  {
-    id: "3",
-    name: "Mercy Krov",
-    type: "Multi Family",
-    address: "456 Red Ave, New York",
-    coordinate: { latitude: 40.7258, longitude: -74.011 },
-    profileImage: "https://randomuser.me/api/portraits/women/3.jpg",
-    icon: icons.Pred,
-    propertyImg: icons.house3,
-    title: "Saudia Gilbert Villa",
-    price: "$950k",
-    area: "3300sqft",
-    sponsored: "false",
-    status: "unavailable",
-  },
-];
+type Property = {
+  uuid: string;
+  title: string;
+  price: number;
+  area: number;
+  address: string;
+  propertyType: string;
+  latlng: string;
+  sponsored: boolean;
+  images: PropertyImage[];
+  displayImage?: { uri: string } | any;
+  createdAt: string;
+};
 
 const EventMapListView = () => {
   const router = useRouter();
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const [properties, setProperties] = useState<Property[]>([]);
   const handleBack = () => {
     router.back();
   };
-  const filteredProperties = PropertyData.filter((item) =>
+  useEffect(() => {
+    const fetchProperties = async () => {
+      try {
+        const response = await apiClient.get("/api/property");
+        const data: Property[] = response.data.data.properties;
+
+        // Map properties and set default image if no images
+        const mapped = data.map((prop) => ({
+          ...prop,
+          displayImage:
+            prop.images && prop.images.length > 0
+              ? { uri: `${BASE_URL}${prop.images[0].imageUrl}` }
+              : icons.house1, // default image
+        }));
+
+        setProperties(mapped);
+      } catch (error) {
+        console.log("API Error:", error);
+      }
+    };
+
+    fetchProperties();
+  }, []);
+
+  const filteredProperties = properties.filter((item) =>
     item.title.toLowerCase().includes(searchQuery.toLowerCase())
   );
   const propertyTypes = ["Single fam", "Condo", "Townhouse", "Multi Family"];
@@ -150,15 +130,20 @@ const EventMapListView = () => {
       >
         {filteredProperties.map((property) => (
           <ProductCard
-            key={property.id}
-            image={property.propertyImg}
+            key={property.uuid}
+            image={property.displayImage} // first image or default
             title={property.title}
             address={property.address}
-            price={property.price}
-            area={property.area}
-            type={property.type}
-            onPressCard={() => router.push("/(screens)/Main/ItemDetails")}
-            sponsored={property.sponsored === "true"}
+            price={`$${property.price}`}
+            area={`${property.area} sqft`}
+            type={property.propertyType}
+            sponsored={property.sponsored}
+            onPressCard={() =>
+              router.push({
+                pathname: "/(screens)/Main/ItemDetails",
+                params: { property: JSON.stringify(property) }, // pass whole property
+              })
+            }
           />
         ))}
       </ScrollView>
@@ -170,8 +155,6 @@ const EventMapListView = () => {
         additionFeature={additionFeature}
         onSubmit={(filters) => console.log("filters:", filters)}
       />
-
-      {/* list end */}
     </Screen>
   );
 };
