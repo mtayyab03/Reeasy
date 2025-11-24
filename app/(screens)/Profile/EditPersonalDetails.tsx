@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   TouchableOpacity,
   StyleSheet,
@@ -20,6 +20,9 @@ import AppHeader from "@/components/common/AppHeader";
 import InputField from "../../../components/common/InputField";
 import CustomAlert from "@/components/common/CustomAlert";
 
+// API
+import apiClient, { BASE_URL } from "@/app/apis/apiClient";
+
 // constants
 import { Colors } from "@/constants/Colors";
 import { FontFamily } from "@/constants/font";
@@ -32,23 +35,35 @@ const EditPersonalDetails = () => {
   const existingUser = {
     name: "John Doe",
     phone: "1234567890",
-    address: "123 Main Street",
-    bsn: "123456789",
-    postcode: "12345",
-    country: "Netherlands",
     imageUri: "https://i.imgur.com/CzXTtJV.jpg",
   };
 
   const [name, setName] = useState<string>(existingUser.name);
   const [phone, setPhone] = useState<string>(existingUser.phone);
-  const [address, setAddress] = useState<string>(existingUser.address);
-  const [bsn, setBsn] = useState<string>(existingUser.bsn);
-  const [postcode, setPostcode] = useState<string>(existingUser.postcode);
-  const [country, setCountry] = useState<string>(existingUser.country);
+
   const [image, setImage] = useState<string | null>(existingUser.imageUri);
   const [alertVisible, setAlertVisible] = useState(false);
   const [alertMessage, setAlertMessage] = useState("");
   const [alertType, setAlertType] = useState<"success" | "error">("success");
+
+  useEffect(() => {
+    const fetchUser = async () => {
+      try {
+        const response = await apiClient.get("/api/user/me");
+        const user = response.data.data;
+
+        setName(user.fullName || "");
+        setPhone(user.phone || "");
+
+        setImage(user.profilePic ? `${BASE_URL}${user.profilePic}` : null);
+        console.log("data response", response.data);
+      } catch (error) {
+        console.log("Error fetching user", error);
+      }
+    };
+
+    fetchUser();
+  }, []);
 
   const pickImage = async () => {
     // Request permission
@@ -74,38 +89,54 @@ const EditPersonalDetails = () => {
     router.back();
   };
 
-  const handleSignup = () => {
-    if (
-      !name.trim() ||
-      !address.trim() ||
-      !phone.trim() ||
-      !bsn.trim() ||
-      !postcode.trim() ||
-      !country.trim()
-    ) {
-      setAlertMessage("Please fill in all the fields.");
-      setAlertType("error");
-      setAlertVisible(true);
-      return;
+  // ✅ Save Edit function
+  const handleSaveEdit = async () => {
+    try {
+      if (!name.trim() || !phone.trim()) {
+        Alert.alert("Error", "Full name and phone number cannot be empty.");
+        return;
+      }
+
+      if (!/^\d{9,}$/.test(phone)) {
+        Alert.alert("Error", "Please enter a valid phone number.");
+        return;
+      }
+
+      // 1️⃣ PATCH name + phone
+      const patchData = { fullName: name, phone: phone };
+      console.log("🔹 Sending PATCH data:", patchData);
+
+      const response = await apiClient.patch("/api/user/me", patchData);
+      console.log("🔹 PATCH response:", response.data);
+
+      // 2️⃣ Upload image if selected
+      if (image && !image.startsWith("http")) {
+        const formData = new FormData();
+        formData.append("profilePic", {
+          uri: image,
+          name: "profile.jpg",
+          type: "image/jpeg",
+        } as any);
+        console.log("🔹 Sending PUT formData:", formData);
+
+        const imgRes = await apiClient.put(
+          "/api/user/me/profile-pic",
+          formData,
+          {
+            headers: {
+              "Content-Type": "multipart/form-data",
+            },
+          }
+        );
+        console.log("🔹 PUT response:", imgRes.data);
+      }
+
+      Alert.alert("Success", "Profile updated successfully!");
+      router.replace("/(tabs)/Profile");
+    } catch (err) {
+      console.log("Update Error:", err);
+      Alert.alert("Error", "Something went wrong while updating.");
     }
-
-    if (!/^\d{10,}$/.test(phone)) {
-      setAlertMessage("Please enter a valid phone number.");
-      setAlertType("error");
-      setAlertVisible(true);
-      return;
-    }
-
-    if (!image) {
-      setAlertMessage("Please upload your profile image.");
-      setAlertType("error");
-      setAlertVisible(true);
-      return;
-    }
-
-    Alert.alert("Edit successful!");
-
-    router.back();
   };
 
   return (
@@ -119,9 +150,7 @@ const EditPersonalDetails = () => {
         onPress={pickImage}
         style={styles.imagePickerContainer}
       >
-        {!image ? (
-          <FontAwesome name="camera" size={32} color={Colors.lightBlack} />
-        ) : (
+        {image ? (
           <Image
             style={{
               width: RFPercentage(12),
@@ -130,6 +159,8 @@ const EditPersonalDetails = () => {
             }}
             source={{ uri: image }}
           />
+        ) : (
+          <FontAwesome name="camera" size={32} color={Colors.lightBlack} />
         )}
       </TouchableOpacity>
 
@@ -148,7 +179,7 @@ const EditPersonalDetails = () => {
       <TouchableOpacity
         style={styles.loginbutton}
         activeOpacity={0.7}
-        onPress={handleSignup}
+        onPress={handleSaveEdit}
       >
         <AppButton title="Save Edit" buttonColor={Colors.blue} />
       </TouchableOpacity>

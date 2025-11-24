@@ -12,7 +12,7 @@ import {
 } from "react-native";
 import { RFPercentage } from "react-native-responsive-fontsize";
 import { FontAwesome6 } from "@expo/vector-icons";
-import { useRouter } from "expo-router";
+import { useRouter, useLocalSearchParams } from "expo-router";
 import * as ImagePicker from "expo-image-picker";
 import { Ionicons } from "@expo/vector-icons";
 
@@ -24,6 +24,9 @@ import CustomAlert from "@/components/common/CustomAlert";
 import { ThemedText } from "@/components/themed-text";
 import AppHeader from "@/components/common/AppHeader";
 
+// API
+import apiClient, { BASE_URL } from "@/app/apis/apiClient";
+
 // constants
 import { Colors } from "@/constants/Colors";
 import { FontFamily } from "@/constants/font";
@@ -32,7 +35,16 @@ import { fontSize } from "@/constants/fontUtils";
 
 const ItemEdit = () => {
   const router = useRouter(); // ✅ get router instance
+  const { property } = useLocalSearchParams();
+  console.log("Previous screend data", property);
+  // Ensure we have a string
+  const propertyString = Array.isArray(property) ? property[0] : property;
+  const parsedProperty = propertyString ? JSON.parse(propertyString) : null;
+
+  const [propertyData, setPropertyData] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
   const [price, setPrice] = useState<string>("");
+  const [title, setTitle] = useState<string>("");
   const [bedrooms, setBedrooms] = useState<string>("");
   const [fullBath, setFullBath] = useState<string>("");
   const [halfBath, setHalfBath] = useState<string>("");
@@ -40,8 +52,8 @@ const ItemEdit = () => {
   const [yearBuilt, setYearBuilt] = useState<string>("");
   const [address, setAddress] = useState<string>("");
   const [description, setDescription] = useState<string>("");
-  const [selectedType, setSelectedType] = useState<string>("Single fam");
-  const propertyTypes = ["Single fam", "Condo", "Townhouse", "Multi Family"];
+  const [selectedType, setSelectedType] = useState<string>("single fam");
+  const propertyTypes = ["single fam", "condo", "townhouse", "multi family"];
   const additionFeature = ["Pool", "Garage", "Water Front"];
   const [selectedFeatures, setSelectedFeatures] = useState<string[]>([]);
   const [isEnabledAppointment, setIsEnabledAppointment] = useState(true);
@@ -70,53 +82,118 @@ const ItemEdit = () => {
     updated.splice(index, 1);
     setImages(updated);
   };
+  // 📌 Fetch property from API
+  useEffect(() => {
+    const fetchProperty = async () => {
+      if (!parsedProperty?.uuid) return;
+      try {
+        const response = await apiClient.get(
+          `/api/property/${parsedProperty.uuid}?language=en`
+        );
 
-  // 📌 Validate min images
-  const handleSubmit = () => {
-    if (images.length < 2) {
-      Alert.alert("Minimum Required", "Please add at least 2 images.");
-      return;
-    }
-    if (!price.trim()) {
-      Alert.alert("Missing Field", "Please enter the price.");
-      return;
-    }
-    if (!bedrooms.trim()) {
-      Alert.alert("Missing Field", "Please enter total bedrooms.");
-      return;
-    }
-    if (!fullBath.trim()) {
-      Alert.alert("Missing Field", "Please enter # full baths.");
-      return;
-    }
-    if (!halfBath.trim()) {
-      Alert.alert("Missing Field", "Please enter # half baths.");
-      return;
-    }
-    if (!livigAreaSize.trim()) {
-      Alert.alert("Missing Field", "Please enter Sqft living area.");
-      return;
-    }
-    if (!yearBuilt.trim()) {
-      Alert.alert("Missing Field", "Please enter Year Built.");
-      return;
-    }
-    if (!address.trim()) {
-      Alert.alert("Missing Field", "Please enter complete address.");
-      return;
-    }
-    if (!description.trim()) {
-      Alert.alert("Missing Field", "Please enter description.");
+        if (response.data.success) {
+          const data = response.data.data;
+          setPropertyData(data);
+
+          // Map API fields to state
+          setTitle(data.title || "");
+          setPrice(data.price?.toString() || "");
+          setBedrooms(data.totalBedRooms?.toString() || "");
+          setFullBath(data.fullBath?.toString() || "");
+          setHalfBath(data.halfBath?.toString() || "");
+          setLivigAreaSize(data.area?.toString() || "");
+          setYearBuilt(data.builtYear?.toString() || "");
+          setAddress(data.address || "");
+          setDescription(data.description || "");
+          setSelectedType(data.propertyType || "single fam");
+          setIsEnabledAppointment(
+            typeof data.appointmentOpen === "boolean"
+              ? data.appointmentOpen
+              : true
+          );
+
+          // Map features
+          const selected: string[] = [];
+          if (data.pool) selected.push("Pool");
+          if (data.garage) selected.push("Garage");
+          if (data.waterFront) selected.push("Water Front");
+          setSelectedFeatures(selected);
+
+          // Map images
+          setImages(
+            data.images && data.images.length > 0
+              ? data.images.map(
+                  (img: { imageUrl: string }) => `${BASE_URL}${img.imageUrl}`
+                )
+              : []
+          );
+        }
+      } catch (error) {
+        console.error("Failed to fetch property details:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchProperty();
+  }, [parsedProperty?.uuid]);
+
+  // 📌 Submit edited property to API
+  const handleSubmit = async () => {
+    if (!title.trim() || !price.trim() || !address.trim()) {
+      Alert.alert("Missing Fields", "Please fill all required fields.");
       return;
     }
 
-    // ✅ If all validations pass
-    Alert.alert("Success", "Property submitted successfully!", [
-      {
-        text: "OK",
-        onPress: () => router.replace("/(tabs)/Home"), // 👈 go Home
-      },
-    ]);
+    try {
+      // 1️⃣ Prepare patch data
+      const patchData = {
+        title,
+        price,
+        bedrooms,
+        fullBath,
+        halfBath,
+        livingAreaSize: livigAreaSize,
+        yearBuilt,
+        address,
+        description,
+        type: selectedType,
+        features: selectedFeatures,
+        openForAppointments: isEnabledAppointment,
+      };
+
+      console.log("Sending PATCH data:", patchData);
+
+      await apiClient.patch(`/api/property/${parsedProperty.uuid}`, patchData);
+
+      // 2️⃣ Upload new images if any (replace or add)
+      const imageUploads = images.filter(
+        (img: any) => !img.uri?.startsWith(BASE_URL)
+      );
+      if (imageUploads.length > 0) {
+        const formData = new FormData();
+        imageUploads.forEach((uri, index) => {
+          formData.append("images", {
+            uri,
+            name: `image_${index}.jpg`,
+            type: "image/jpeg",
+          } as any);
+        });
+
+        await apiClient.put(
+          `/api/property/${parsedProperty.uuid}/images`,
+          formData,
+          { headers: { "Content-Type": "multipart/form-data" } }
+        );
+      }
+
+      Alert.alert("Success", "Property updated successfully!", [
+        { text: "OK", onPress: () => router.back() },
+      ]);
+    } catch (error) {
+      console.error("Failed to update property:", error);
+      Alert.alert("Error", "Failed to update property. Try again.");
+    }
   };
 
   const handleToggle = (feature: string) => {
@@ -130,43 +207,6 @@ const ItemEdit = () => {
   const handleBack = () => {
     router.back();
   };
-
-  const mockProperty = {
-    id: "12345",
-    price: 250000,
-    bedrooms: 3,
-    fullBath: 2,
-    halfBath: 1,
-    livingAreaSize: 1800,
-    yearBuilt: 2015,
-    address: "123 Main Street, Mandi Bahauddin, Punjab, Pakistan",
-    description:
-      "Beautiful single-family home with modern design, spacious living area, and nearby schools.",
-    type: "Single fam",
-    features: ["Pool", "Garage"],
-    openForAppointments: true,
-    images: [
-      "https://picsum.photos/200/300?random=1",
-      "https://picsum.photos/200/300?random=2",
-      "https://picsum.photos/200/300?random=3",
-    ],
-  };
-
-  // 🟢 Preload into state
-  useEffect(() => {
-    setPrice(mockProperty.price.toString());
-    setBedrooms(mockProperty.bedrooms.toString());
-    setFullBath(mockProperty.fullBath.toString());
-    setHalfBath(mockProperty.halfBath.toString());
-    setLivigAreaSize(mockProperty.livingAreaSize.toString());
-    setYearBuilt(mockProperty.yearBuilt.toString());
-    setAddress(mockProperty.address);
-    setDescription(mockProperty.description);
-    setSelectedType(mockProperty.type);
-    setSelectedFeatures(mockProperty.features);
-    setIsEnabledAppointment(mockProperty.openForAppointments);
-    setImages(mockProperty.images);
-  }, []);
 
   return (
     <Screen style={styles.screen}>
@@ -213,16 +253,20 @@ const ItemEdit = () => {
         </TouchableOpacity>
 
         {/* Add property details */}
+        <InputField placeTitle="Title" value={title} onChangeText={setTitle} />
+        <View style={{ marginTop: RFPercentage(1) }} />
         <InputField
           placeTitle="Enter the price"
           value={price}
           onChangeText={setPrice}
+          numeric
         />
         <View style={{ marginTop: RFPercentage(1) }} />
         <InputField
           placeTitle="Enter total bedrooms"
           value={bedrooms}
           onChangeText={setBedrooms}
+          numeric
         />
 
         <View
@@ -239,6 +283,7 @@ const ItemEdit = () => {
               value={fullBath}
               onChangeText={setFullBath}
               containerStyle={{ width: "100%", height: fontSize(43) }}
+              numeric
             />
           </View>
           <View style={{ width: "49%" }}>
@@ -247,6 +292,7 @@ const ItemEdit = () => {
               value={halfBath}
               onChangeText={setHalfBath}
               containerStyle={{ width: "100%", height: fontSize(43) }}
+              numeric
             />
           </View>
         </View>
@@ -256,12 +302,14 @@ const ItemEdit = () => {
           placeTitle="Enter Sqft Living area"
           value={livigAreaSize}
           onChangeText={setLivigAreaSize}
+          numeric
         />
         <View style={{ marginTop: RFPercentage(1) }} />
         <InputField
           placeTitle="Enter Year Built"
           value={yearBuilt}
           onChangeText={setYearBuilt}
+          numeric
         />
         <View style={{ marginTop: RFPercentage(1) }} />
         <InputField

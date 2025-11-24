@@ -11,10 +11,9 @@ import {
   Switch,
 } from "react-native";
 import { RFPercentage } from "react-native-responsive-fontsize";
-import { FontAwesome6 } from "@expo/vector-icons";
+import { FontAwesome6, Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import * as ImagePicker from "expo-image-picker";
-import { Ionicons } from "@expo/vector-icons";
 import PlacesInput from "@/components/common/PlacesInput";
 // Components
 import Screen from "@/components/common/Screen";
@@ -261,7 +260,12 @@ const AddItem = () => {
         {/* Add property details */}
         <InputField placeTitle="Title" value={title} onChangeText={setTitle} />
         <View style={{ marginTop: RFPercentage(1) }} />
-        <InputField placeTitle="Price" value={price} onChangeText={setPrice} />
+        <InputField
+          placeTitle="Price"
+          value={price}
+          onChangeText={setPrice}
+          numeric
+        />
         <View style={{ marginTop: RFPercentage(1) }} />
         <InputField
           placeTitle="Total bedrooms"

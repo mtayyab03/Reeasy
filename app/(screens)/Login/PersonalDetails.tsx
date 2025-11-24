@@ -10,13 +10,16 @@ import {
 } from "react-native";
 import { RFPercentage } from "react-native-responsive-fontsize";
 import { Feather, Ionicons, FontAwesome } from "@expo/vector-icons";
-import { useRouter } from "expo-router";
+import { useRouter, useLocalSearchParams } from "expo-router";
 import * as ImagePicker from "expo-image-picker";
 
 // Components
 import Screen from "@/components/common/Screen";
 import AppButton from "@/components/common/AppButton";
 import { ThemedText } from "@/components/themed-text";
+
+// API
+import apiClient, { BASE_URL } from "@/app/apis/apiClient";
 
 // constants
 import { Colors } from "@/constants/Colors";
@@ -26,6 +29,8 @@ import { fontSize } from "@/constants/fontUtils";
 
 const PersonalDetails = () => {
   const router = useRouter();
+  const { token } = useLocalSearchParams();
+  console.log("signup token for personal details", token);
   const [name, setName] = useState<string>("");
   const [phone, setPhone] = useState<string>("");
   const [image, setImage] = useState<string | null>(null);
@@ -54,19 +59,67 @@ const PersonalDetails = () => {
     router.back();
   };
 
-  const handleSignup = () => {
-    if (!name.trim() || !phone.trim()) {
-      Alert.alert("Error", "Full name and phone number cannot be empty.");
-      return;
+  const handleSignup = async () => {
+    try {
+      if (!name.trim() || !phone.trim()) {
+        Alert.alert("Error", "Full name and phone number cannot be empty.");
+        return;
+      }
+
+      if (!/^\d{9,}$/.test(phone)) {
+        Alert.alert("Error", "Please enter a valid phone number.");
+        return;
+      }
+
+      // 🔹 1️⃣ Prepare data to send
+      const patchData = {
+        fullName: name,
+        phone: phone,
+      };
+      console.log("🔹 Sending PATCH data:", patchData);
+
+      // 1️⃣ First update name + phone
+      const response = await apiClient.patch(`/api/user/me`, patchData, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      console.log("🔹 PATCH response:", response.data);
+
+      // 🔹 2️⃣ Prepare image formData if available
+      if (image) {
+        const formData = new FormData();
+        formData.append("profilePic", {
+          uri: image,
+          name: "profile.jpg",
+          type: "image/jpeg",
+        } as any);
+
+        console.log("🔹 Sending PUT formData:", formData);
+
+        // 2️⃣ Upload image
+        const imgRes = await apiClient.put(
+          `/api/user/me/profile-pic`,
+          formData,
+          {
+            headers: {
+              "Content-Type": "multipart/form-data",
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
+        console.log("🔹 PUT response:", imgRes.data);
+      }
+
+      Alert.alert("Success", "Profile updated successfully!");
+      router.replace("/(screens)/Login/LoginScreen");
+    } catch (err) {
+      console.log("Update Error:", err);
+      Alert.alert("Error", "Something went wrong while updating.");
     }
-    // Phone number validation: only digits and at least 10 digits
-    if (!/^\d{9,}$/.test(phone)) {
-      Alert.alert("Error", "Please enter a valid phone number");
-      return;
-    }
-    Alert.alert("Success", "Sign up successful!");
-    router.replace("/(screens)/Login/LoginScreen");
   };
+
   return (
     <Screen style={styles.screen}>
       {/* arrow icon */}

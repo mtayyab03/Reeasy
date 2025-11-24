@@ -20,7 +20,6 @@ apiClient.interceptors.request.use(
         "/otp-verify",
         "/forgot",
         "/reset",
-        "/me",
         "/otp-resend",
       ];
 
