@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { useRouter } from "expo-router";
+import { useRouter, useLocalSearchParams } from "expo-router";
 import {
   Image,
   TouchableOpacity,
@@ -10,12 +10,15 @@ import {
 } from "react-native";
 import { RFPercentage } from "react-native-responsive-fontsize";
 import { Ionicons } from "@expo/vector-icons";
-
+import { AxiosError } from "axios";
 // constants
 import { Colors } from "@/constants/Colors";
 import { FontFamily } from "@/constants/font";
 import icons from "@/constants/icons";
 import { fontSize } from "@/constants/fontUtils";
+
+// API
+import apiClient, { BASE_URL } from "@/app/apis/apiClient";
 
 // Components
 import Screen from "@/components/common/Screen";
@@ -25,12 +28,14 @@ import DatePicker from "@/components/common/DatePicker";
 
 const VisitSchedule = () => {
   const router = useRouter();
+  const { title, address, price, uuid } = useLocalSearchParams();
+  console.log("Received:", title, address, price, uuid);
   const [date, setDate] = useState("");
   const [time, setTime] = useState("");
   const handleBack = () => {
     router.back();
   };
-  const handleSend = () => {
+  const handleSend = async () => {
     if (!date) {
       Alert.alert("Please select a date");
       return;
@@ -40,18 +45,94 @@ const VisitSchedule = () => {
       return;
     }
 
-    Alert.alert("Request has been sent");
-    router.push("/(tabs)/Home");
+    try {
+      const payload = {
+        propertyUid: uuid, // coming from route params
+        appointmentDate: formatDate(date), // → YYYY-MM-DD
+        appointmentTime: formatTime(time),
+      };
+
+      console.log("Sending Appointment Payload:", payload);
+
+      const response = await apiClient.post(
+        "/api/property/appointment",
+        payload
+      );
+
+      console.log("Response:", response.data);
+
+      Alert.alert("Success", "Request has been sent");
+      router.push("/(tabs)/Home");
+    } catch (err) {
+      const error = err as AxiosError<any>;
+      console.log("Catche error", error);
+      console.log(error.response?.data);
+      Alert.alert(
+        "Alert",
+        error.response?.data?.message ||
+          "You cannot book appointment on your own property"
+      );
+    }
+  };
+
+  const formatDate = (value: string) => {
+    // incoming: "20-12-2025" or "20/12/2025"
+    const parts = value.split(/[-/]/);
+
+    if (parts.length !== 3) return value;
+
+    const [day, month, year] = parts;
+    return `${year}-${month}-${day}`; // backend format
+  };
+
+  const formatTime = (value: string) => {
+    // Handles both: 10:20  AND  1:20PM
+    if (value.includes("AM") || value.includes("PM")) {
+      return convertTo24Hour(value);
+    }
+
+    // Already 24-hour -> append seconds
+    const parts = value.split(":");
+    if (parts.length === 2) {
+      return `${parts[0]}:${parts[1]}:00`;
+    }
+
+    return value;
+  };
+  const convertTo24Hour = (value: string) => {
+    let clean = value.replace(/\s/g, ""); // remove weird spaces
+
+    const match = clean.match(/(\d{1,2}):(\d{2})(AM|PM)/i);
+    if (!match) return clean + ":00"; // fallback
+
+    let [_, hour, min, period] = match;
+
+    let h = parseInt(hour, 10);
+
+    if (period.toUpperCase() === "PM" && h !== 12) h += 12;
+    if (period.toUpperCase() === "AM" && h === 12) h = 0;
+
+    return `${h.toString().padStart(2, "0")}:${min}:00`;
+  };
+
+  const capitalizeFirstLetter = (text: string) => {
+    if (!text) return "";
+    return text.charAt(0).toUpperCase() + text.slice(1);
   };
   return (
     <Screen style={styles.screen}>
       <AppHeader title="Schedule" onPress={() => handleBack()} />
 
       <View style={styles.cardDetail}>
-        <View style={{ flex: 1 }}>
+        <View style={{ width: "65%" }}>
           {/* Title + Type */}
           <View style={{ flexDirection: "row", alignItems: "center" }}>
-            <Text style={styles.name}>Sterlin Apartment</Text>
+            <Text style={styles.name}>
+              {" "}
+              {capitalizeFirstLetter(
+                Array.isArray(title) ? title[0] : title || ""
+              )}
+            </Text>
           </View>
 
           {/* Address */}
@@ -63,7 +144,7 @@ const VisitSchedule = () => {
               style={{ marginRight: RFPercentage(0.3) }}
             />
             <Text style={[styles.details, { fontSize: fontSize(9) }]}>
-              Street no 3, Area 20, California, USA
+              {address}
             </Text>
           </View>
         </View>
@@ -71,7 +152,7 @@ const VisitSchedule = () => {
         {/* Price + Area */}
         <View style={{ alignItems: "flex-end" }}>
           <View style={{ marginTop: RFPercentage(1) }} />
-          <Text style={styles.name}>$200,000</Text>
+          <Text style={styles.name}>${price}</Text>
         </View>
       </View>
 

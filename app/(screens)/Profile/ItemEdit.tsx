@@ -11,16 +11,14 @@ import {
   Switch,
 } from "react-native";
 import { RFPercentage } from "react-native-responsive-fontsize";
-import { FontAwesome6 } from "@expo/vector-icons";
+import { FontAwesome6, Ionicons } from "@expo/vector-icons";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import * as ImagePicker from "expo-image-picker";
-import { Ionicons } from "@expo/vector-icons";
 
 // Components
 import Screen from "@/components/common/Screen";
 import AppButton from "@/components/common/AppButton";
 import InputField from "@/components/common/InputField";
-import CustomAlert from "@/components/common/CustomAlert";
 import { ThemedText } from "@/components/themed-text";
 import AppHeader from "@/components/common/AppHeader";
 

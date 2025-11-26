@@ -6,6 +6,7 @@ import {
   TouchableOpacity,
   StyleSheet,
   ScrollView,
+  Text,
 } from "react-native";
 import { RFPercentage } from "react-native-responsive-fontsize";
 import { Ionicons } from "@expo/vector-icons";
@@ -36,11 +37,15 @@ type Property = {
   area: number;
   address: string;
   propertyType: string;
+  features?: string[];
   latlng: string;
   sponsored: boolean;
   images: PropertyImage[];
   displayImage?: { uri: string } | any;
   createdAt: string;
+  bedrooms: number;
+  fullBaths: number;
+  halfBaths: number;
 };
 
 const EventMapListView = () => {
@@ -48,6 +53,18 @@ const EventMapListView = () => {
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [properties, setProperties] = useState<Property[]>([]);
+  const [activeFilters, setActiveFilters] = useState({
+    selectedType: null,
+    selectedFeatures: [] as string[],
+    priceRange: null as [number, number] | null,
+    bedroomsRange: null as [number, number] | null,
+    fullBathsRange: null as [number, number] | null,
+    halfBathsRange: null as [number, number] | null,
+    areaRange: null as [number, number] | null,
+  });
+
+  const propertyTypes = ["Single fam", "Condo", "Townhouse", "Multi Family"];
+  const additionFeature = ["Pool", "Garage", "Water Front"];
   const handleBack = () => {
     router.back();
   };
@@ -75,12 +92,73 @@ const EventMapListView = () => {
     fetchProperties();
   }, []);
 
-  const filteredProperties = properties.filter((item) =>
-    item.title.toLowerCase().includes(searchQuery.toLowerCase())
-  );
-  const propertyTypes = ["Single fam", "Condo", "Townhouse", "Multi Family"];
-  const additionFeature = ["Pool", "Garage", "Water Front"];
+  const filteredProperties = properties.filter((item) => {
+    // 1️⃣ Search filter
+    const matchesSearch = item.title
+      .toLowerCase()
+      .includes(searchQuery.toLowerCase());
 
+    // 2️⃣ Property type filter
+    const matchesType = activeFilters.selectedType
+      ? item.propertyType === activeFilters.selectedType
+      : true;
+
+    // 3️⃣ Additional features filter
+    const matchesFeatures =
+      activeFilters.selectedFeatures?.length > 0
+        ? activeFilters.selectedFeatures.every((f) =>
+            item.features?.includes(f)
+          )
+        : true;
+
+    // 4️⃣ Price range filter
+    const matchesPrice =
+      activeFilters.priceRange?.length === 2
+        ? item.price >= activeFilters.priceRange[0] &&
+          item.price <= activeFilters.priceRange[1]
+        : true;
+
+    // 5️⃣ Bedrooms filter
+    const matchesBedrooms =
+      activeFilters.bedroomsRange?.length === 2
+        ? item.bedrooms >= activeFilters.bedroomsRange[0] &&
+          item.bedrooms <= activeFilters.bedroomsRange[1]
+        : true;
+
+    // 6️⃣ Full baths filter
+    const matchesFullBaths =
+      activeFilters.fullBathsRange?.length === 2
+        ? item.fullBaths >= activeFilters.fullBathsRange[0] &&
+          item.fullBaths <= activeFilters.fullBathsRange[1]
+        : true;
+
+    // 7️⃣ Half baths filter
+    const matchesHalfBaths =
+      activeFilters.halfBathsRange?.length === 2
+        ? item.halfBaths >= activeFilters.halfBathsRange[0] &&
+          item.halfBaths <= activeFilters.halfBathsRange[1]
+        : true;
+
+    // 8️⃣ Area filter
+    const matchesArea =
+      activeFilters.areaRange?.length === 2
+        ? item.area >= activeFilters.areaRange[0] &&
+          item.area <= activeFilters.areaRange[1]
+        : true;
+
+    // ✅ Only include item if all conditions match
+    return (
+      matchesSearch &&
+      matchesType &&
+      matchesFeatures &&
+      matchesPrice &&
+      matchesBedrooms &&
+      matchesFullBaths &&
+      matchesHalfBaths &&
+      matchesArea
+    );
+  });
+  console.log("Filtered properties", filteredProperties);
   return (
     <Screen style={styles.screen}>
       <AppHeader title="Property List" onPress={() => handleBack()} />
@@ -128,24 +206,38 @@ const EventMapListView = () => {
         style={{ width: "100%" }}
         showsVerticalScrollIndicator={false}
       >
-        {filteredProperties.map((property) => (
-          <ProductCard
-            key={property.uuid}
-            image={property.displayImage} // first image or default
-            title={property.title}
-            address={property.address}
-            price={`$${property.price}`}
-            area={`${property.area} sqft`}
-            type={property.propertyType}
-            sponsored={property.sponsored}
-            onPressCard={() =>
-              router.push({
-                pathname: "/(screens)/Main/ItemDetails",
-                params: { property: JSON.stringify(property) }, // pass whole property
-              })
-            }
-          />
-        ))}
+        {filteredProperties.length === 0 ? (
+          <View style={{ marginTop: RFPercentage(5) }}>
+            <Text
+              style={{
+                fontSize: RFPercentage(2.5),
+                color: Colors.darkGrey,
+                fontFamily: FontFamily.medium,
+              }}
+            >
+              No properties found
+            </Text>
+          </View>
+        ) : (
+          filteredProperties.map((property) => (
+            <ProductCard
+              key={property.uuid}
+              image={property.displayImage} // first image or default
+              title={property.title}
+              address={property.address}
+              price={`$${property.price}`}
+              area={`${property.area} sqft`}
+              type={property.propertyType}
+              sponsored={property.sponsored}
+              onPressCard={() =>
+                router.push({
+                  pathname: "/(screens)/Main/ItemDetails",
+                  params: { property: JSON.stringify(property) },
+                })
+              }
+            />
+          ))
+        )}
       </ScrollView>
 
       <FilterModal
@@ -153,7 +245,10 @@ const EventMapListView = () => {
         setModalVisible={setIsModalVisible}
         propertyTypes={propertyTypes}
         additionFeature={additionFeature}
-        onSubmit={(filters) => console.log("filters:", filters)}
+        onSubmit={(filters) => {
+          console.log("Applied Filters:", filters);
+          setActiveFilters(filters); // lift filters up
+        }}
       />
     </Screen>
   );

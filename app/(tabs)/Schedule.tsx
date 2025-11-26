@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useRouter } from "expo-router";
 import {
   View,
@@ -15,11 +15,25 @@ import Screen from "@/components/common/Screen";
 import CustomTabBar from "@/components/common/CustomTabBar";
 import ScheduleCard from "@/components/Specific/ScheduleCard";
 
+// API
+import apiClient, { BASE_URL } from "@/app/apis/apiClient";
+
 // constants
 import { Colors } from "@/constants/Colors";
 import { FontFamily } from "@/constants/font";
 import icons from "@/constants/icons";
 import { fontSize } from "@/constants/fontUtils";
+
+type ScheduleItem = {
+  id: string;
+  profileImage: string;
+  name: string;
+  requestText: string;
+  propertyName: string;
+  dateTime: string;
+  requestStatus?: any;
+  ownerReschedule?: boolean;
+};
 
 const Schedule = () => {
   const router = useRouter();
@@ -27,85 +41,83 @@ const Schedule = () => {
   type TabType = "Received" | "Requested" | "Confirmed" | "Visits";
 
   const tabs: TabType[] = ["Received", "Requested", "Confirmed", "Visits"];
-
   const [selectedTab, setSelectedTab] = useState<TabType>("Received");
 
-  const scheduleData: Record<TabType, any[]> = {
-    Received: [
-      {
-        id: 1,
-        profileImage: icons.pf1,
-        name: "Daisy Shah",
-        requestText: "Visiting Request Received",
-        propertyName: "Stephan Villa Lake",
-        dateTime: "13/04/2025 - 07:25",
-      },
-      {
-        id: 2,
-        profileImage: icons.pf5,
-        name: "Ana Hermes",
-        requestText: "Visiting Request Received",
-        propertyName: "Zinc Residency",
-        dateTime: "08/04/2025 - 03:00",
-      },
-      {
-        id: 3,
-        profileImage: icons.pf2,
-        name: "Nima Hilton",
-        requestText: "Visiting Request Received",
-        propertyName: "Palm Residency",
-        dateTime: "15/04/2025 - 09:00",
-      },
-    ],
-    Requested: [
-      {
-        id: 4,
-        profileImage: icons.pf3,
-        name: "Elsa Ryon",
-        requestText: "Visiting Request Send",
-        propertyName: "Sunset Heights",
-        dateTime: "16/04/2025 - 11:00",
-        requestStatus: "Pending", // 👈 status for Requested
-      },
-      {
-        id: 5,
-        profileImage: icons.pf4,
-        name: "Jhon Mark",
-        requestText: "Visiting Request Send",
-        propertyName: "Skyline Apartments",
-        dateTime: "17/04/2025 - 15:30",
-        requestStatus: "Accepted",
-      },
-    ],
-    Confirmed: [
-      {
-        id: 6,
-        profileImage: icons.pf6,
-        name: "Priyanka Kat",
-        requestText: "Visits I Accepted",
-        propertyName: "Beachside Villa",
-        dateTime: "18/04/2025 - 13:00",
-      },
-    ],
-    Visits: [
-      {
-        id: 7,
-        profileImage: icons.pf5,
-        name: "Jane Singh",
-        requestText: "Visits I Will Attend",
-        propertyName: "Hilltop Bungalow",
-        dateTime: "19/04/2025 - 10:00",
-      },
-      {
-        id: 8,
-        profileImage: icons.pf3,
-        name: "Zara Loker",
-        requestText: "Visits I Will Attend",
-        propertyName: "Hilltop Bungalow",
-        dateTime: "19/04/2025 - 10:00",
-      },
-    ],
+  const [scheduleData, setScheduleData] = useState<
+    Record<TabType, ScheduleItem[]>
+  >({
+    Received: [],
+    Requested: [],
+    Confirmed: [],
+    Visits: [],
+  });
+
+  useEffect(() => {
+    fetchAllAppointments();
+  }, []);
+
+  const fetchAllAppointments = async () => {
+    try {
+      const [receivedRes, requestedRes, confirmedRes, visitsRes] =
+        await Promise.all([
+          apiClient.get("/api/property/appointment/owner-received"),
+          apiClient.get("/api/property/appointment/booker-requested"),
+          apiClient.get("/api/property/appointment/owner-confirmed"),
+          apiClient.get("/api/property/appointment/booker-visit"),
+        ]);
+
+      setScheduleData({
+        Received: receivedRes.data.data.map((item: any) => ({
+          id: item.uuid,
+          profileImage: item.booker?.profilePic
+            ? `${BASE_URL}${item.booker.profilePic}`
+            : "",
+          name: item.booker?.fullName || "No Name",
+          requestText: "Visiting Request Received",
+          propertyName: item.propertyDetails.title,
+          dateTime: `${item.appointmentDate} - ${item.appointmentTime}`,
+        })),
+        Requested: requestedRes.data.data.map((item: any) => ({
+          id: item.uuid,
+          profileImage: item.propertyOwner?.profilePic
+            ? `${BASE_URL}${item.propertyOwner.profilePic}`
+            : "",
+          name: item.propertyOwner?.fullName || "No Name",
+          requestText: "Visiting Request Send",
+          propertyName: item.propertyDetails.title,
+          dateTime: `${item.appointmentDate} - ${item.appointmentTime}`,
+          requestStatus: item.status,
+          ownerReschedule: item.propertyOwnerResheduled,
+        })),
+        Confirmed: confirmedRes.data.data.map((item: any) => ({
+          id: item.uuid,
+          profileImage: item.booker?.profilePic
+            ? `${BASE_URL}${item.booker.profilePic}`
+            : "",
+          name: item.booker?.fullName || "No Name",
+          requestText: "Visits I Accepted",
+          propertyName: item.propertyDetails.title,
+          dateTime: `${item.appointmentDate} - ${item.appointmentTime}`,
+        })),
+        Visits: visitsRes.data.data.map((item: any) => ({
+          id: item.uuid,
+          profileImage: item.booker?.profilePic
+            ? `${BASE_URL}${item.booker.profilePic}`
+            : "",
+          name: item.booker?.fullName || "No Name",
+          requestText: "Visits I Will Attend",
+          propertyName: item.propertyDetails.title,
+          dateTime: `${item.appointmentDate} - ${item.appointmentTime}`,
+        })),
+      });
+    } catch (error) {
+      console.log("Error fetching appointments:", error);
+    }
   };
+
+  const filteredData = scheduleData[selectedTab].filter((item) =>
+    item.name.toLowerCase().includes(searchQuery.toLowerCase())
+  );
 
   return (
     <Screen style={styles.screen}>
@@ -136,11 +148,8 @@ const Schedule = () => {
 
       {/* cards */}
 
-      {scheduleData[selectedTab]
-        .filter((item) =>
-          item.name.toLowerCase().includes(searchQuery.toLowerCase())
-        )
-        .map((item) => (
+      {filteredData.length > 0 ? (
+        filteredData.map((item) => (
           <ScheduleCard
             key={item.id}
             profileImage={item.profileImage}
@@ -148,18 +157,17 @@ const Schedule = () => {
             requestText={item.requestText}
             propertyName={item.propertyName}
             dateTime={item.dateTime}
-            statusTab={selectedTab} // 👈 pass current tab
-            requestStatus={item.requestStatus} // only applies for Requested
+            statusTab={selectedTab}
+            ownerReschedule={item.ownerReschedule}
+            requestStatus={item.requestStatus}
             onAccept={() => console.log(`Accepted ${item.id}`)}
             onReject={() => console.log(`Rejected ${item.id}`)}
             onReschedule={() => console.log(`Rescheduled ${item.id}`)}
             onCancel={() => console.log(`Canceled ${item.id}`)}
-            onDriveTo={() => router.push("/(screens)/Main/DriveToScreen")} // 👈 navigate
+            onDriveTo={() => router.push("/(screens)/Main/DriveToScreen")}
           />
-        ))}
-      {scheduleData[selectedTab].filter((item) =>
-        item.name.toLowerCase().includes(searchQuery.toLowerCase())
-      ).length === 0 && (
+        ))
+      ) : (
         <Text
           style={{
             marginTop: RFPercentage(5),

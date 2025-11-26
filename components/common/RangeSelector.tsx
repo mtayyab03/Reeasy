@@ -1,36 +1,40 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
 import Slider from "@react-native-community/slider";
 
-type Props = {
+type RangeSelectorProps = {
   label: string;
   min: number;
   max: number;
-  step: number;
-  initial?: [number, number];
-  onChange?: (range: [number, number]) => void;
+  step?: number;
+  value?: [number, number]; // current range
+  onChange?: (range: [number, number]) => void; // callback for changes
 };
 
-export default function RangeSelector({
+const RangeSelector: React.FC<RangeSelectorProps> = ({
   label,
   min,
   max,
-  step,
-  initial,
+  step = 1,
+  value,
   onChange,
-}: Props) {
-  const [range, setRange] = useState<[number, number]>(initial ?? [min, max]);
+}) => {
+  const [range, setRange] = useState<[number, number]>(value ?? [min, max]);
   const [active, setActive] = useState<"min" | "max">("min");
+
+  useEffect(() => {
+    if (value) {
+      setRange(value);
+    }
+  }, [value]);
 
   const handleValueChange = (val: number) => {
     if (active === "min") {
-      // ensure min does not exceed current max
       const newMin = Math.min(val, range[1]);
       const newRange: [number, number] = [newMin, range[1]];
       setRange(newRange);
       onChange?.(newRange);
     } else {
-      // ensure max not below current min
       const newMax = Math.max(val, range[0]);
       const newRange: [number, number] = [range[0], newMax];
       setRange(newRange);
@@ -80,8 +84,8 @@ export default function RangeSelector({
       </View>
     </View>
   );
-}
-
+};
+export default RangeSelector;
 const styles = StyleSheet.create({
   container: { marginVertical: 12 },
   label: { fontSize: 16, fontWeight: "600", marginBottom: 8 },

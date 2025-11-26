@@ -6,6 +6,7 @@ import { RFPercentage } from "react-native-responsive-fontsize";
 import { Colors } from "@/constants/Colors";
 import { FontFamily } from "@/constants/font";
 import { fontSize } from "@/constants/fontUtils";
+import icons from "@/constants/icons";
 
 interface ScheduleCardProps {
   profileImage: any;
@@ -14,12 +15,13 @@ interface ScheduleCardProps {
   propertyName: string;
   dateTime: string;
   statusTab: string; // 👈 NEW
-  requestStatus?: "Accepted" | "Rejected" | "Pending"; // 👈 NEW
+  requestStatus?: "accepted" | "rejected" | "pending"; // 👈 NEW
   onAccept?: () => void;
   onReject?: () => void;
   onReschedule?: () => void;
   onCancel?: () => void;
   onDriveTo?: () => void;
+  ownerReschedule?: boolean;
 }
 
 const ScheduleCard: React.FC<ScheduleCardProps> = ({
@@ -35,6 +37,7 @@ const ScheduleCard: React.FC<ScheduleCardProps> = ({
   onReschedule,
   onCancel,
   onDriveTo,
+  ownerReschedule,
 }) => {
   // Render buttons dynamically
   const renderActions = () => {
@@ -101,28 +104,39 @@ const ScheduleCard: React.FC<ScheduleCardProps> = ({
 
       case "Requested":
         let bgColor = Colors.lightGrey;
-        if (requestStatus === "Accepted") bgColor = Colors.green;
-        if (requestStatus === "Rejected") bgColor = Colors.red;
+        if (requestStatus === "accepted") bgColor = Colors.green;
+        if (requestStatus === "rejected") bgColor = Colors.red;
 
         return (
-          <View
-            style={[
-              styles.rightSection,
-              {
-                maxWidth: RFPercentage(12),
-                backgroundColor: bgColor,
-                paddingHorizontal: RFPercentage(1),
-                paddingVertical: RFPercentage(0.7),
-                borderRadius: RFPercentage(0.8),
-                alignItems: "center",
-                justifyContent: "center",
-                marginTop: RFPercentage(2),
-              },
-            ]}
-          >
-            <Text style={[styles.statusText, { color: Colors.white }]}>
-              {requestStatus}
-            </Text>
+          <View style={styles.rightSection}>
+            {ownerReschedule && (
+              <>
+                <TouchableOpacity
+                  onPress={onAccept}
+                  style={styles.detailButton}
+                >
+                  <Text style={styles.buttonText}>Accept</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  onPress={onReject}
+                  style={[styles.detailButton, { backgroundColor: Colors.red }]}
+                >
+                  <Text style={styles.buttonText}>Reject</Text>
+                </TouchableOpacity>
+              </>
+            )}
+            <TouchableOpacity
+              style={[styles.detailButton, { backgroundColor: bgColor }]}
+            >
+              <Text style={styles.buttonText}>{requestStatus}</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              onPress={onReschedule}
+              style={styles.detailButton}
+            >
+              <Text style={styles.buttonText}>Reschedule</Text>
+            </TouchableOpacity>
           </View>
         );
 
@@ -136,7 +150,14 @@ const ScheduleCard: React.FC<ScheduleCardProps> = ({
       <View style={styles.cardDetail}>
         {/* Left side */}
         <View style={styles.leftSection}>
-          <Image source={profileImage} style={styles.profileImage} />
+          <Image
+            source={
+              profileImage && profileImage !== ""
+                ? { uri: profileImage }
+                : icons.emptyP
+            }
+            style={styles.profileImage}
+          />
           <View style={{ flex: 1, marginLeft: 10 }}>
             <Text style={styles.name}>{name}</Text>
             <Text style={styles.details}>{requestText}</Text>

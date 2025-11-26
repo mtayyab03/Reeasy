@@ -101,34 +101,48 @@ const MyItems = () => {
         />
       </View>
 
-      {/* 🏡 Scrollable property list */}
-      <ScrollView
-        contentContainerStyle={{
-          alignItems: "center",
-          paddingBottom: RFPercentage(10),
-        }}
-        style={{ width: "100%" }}
-        showsVerticalScrollIndicator={false}
-      >
-        {filteredProperties.map((property) => (
-          <ProductCard
-            key={property.uuid}
-            image={property.displayImage} // first image or default
-            title={property.title}
-            address={property.address}
-            price={`$${property.price}`}
-            area={`${property.area} sqft`}
-            type={property.propertyType}
-            cardpage="Edit" // or "Favourite" based on requirement
-            onPress={() =>
-              router.push({
-                pathname: "/(screens)/Profile/ItemEdit",
-                params: { property: JSON.stringify(property) }, // pass whole property
-              })
-            }
-          />
-        ))}
-      </ScrollView>
+      {/* 🏡 Property List or Empty Message */}
+      {filteredProperties.length === 0 ? (
+        <View style={{ marginTop: RFPercentage(5), alignItems: "center" }}>
+          <Text
+            style={{
+              fontFamily: FontFamily.medium,
+              fontSize: fontSize(16),
+              color: Colors.grey,
+            }}
+          >
+            No items found
+          </Text>
+        </View>
+      ) : (
+        <ScrollView
+          contentContainerStyle={{
+            alignItems: "center",
+            paddingBottom: RFPercentage(10),
+          }}
+          style={{ width: "100%" }}
+          showsVerticalScrollIndicator={false}
+        >
+          {filteredProperties.map((property) => (
+            <ProductCard
+              key={property.uuid}
+              image={property.displayImage}
+              title={property.title}
+              address={property.address}
+              price={`$${property.price}`}
+              area={`${property.area} sqft`}
+              type={property.propertyType}
+              cardpage="Edit"
+              onPress={() =>
+                router.push({
+                  pathname: "/(screens)/Profile/ItemEdit",
+                  params: { property: JSON.stringify(property) },
+                })
+              }
+            />
+          ))}
+        </ScrollView>
+      )}
 
       {/* list end */}
     </Screen>

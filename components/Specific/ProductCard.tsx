@@ -80,7 +80,11 @@ const ProductCard: React.FC<ProductCardProps> = ({
 
       {/* Card Details */}
       <View style={styles.cardDetail}>
-        <View style={{ flex: 1 }}>
+        <View
+          style={{
+            width: "70%",
+          }}
+        >
           {/* Title + Type */}
           <View style={{ flexDirection: "row", alignItems: "center" }}>
             <Text style={styles.name}>{capitalizeFirstLetter(title)}</Text>
@@ -104,7 +108,7 @@ const ProductCard: React.FC<ProductCardProps> = ({
         </View>
 
         {/* Price + Area */}
-        <View style={{ alignItems: "flex-end" }}>
+        <View style={{ alignItems: "flex-end", width: "30%" }}>
           <Text style={styles.name}>{price}</Text>
           <Text style={styles.details}>{area}</Text>
         </View>
@@ -171,7 +175,7 @@ const styles = StyleSheet.create({
     marginTop: RFPercentage(1),
   },
   name: {
-    fontSize: fontSize(15),
+    fontSize: fontSize(14),
     fontFamily: FontFamily.semiBold,
     color: Colors.lightBlack,
   },

@@ -43,6 +43,18 @@ export default function FilterModal({
 }: Props) {
   const [selectedType, setSelectedType] = useState<string | null>(null);
   const [selectedFeatures, setSelectedFeatures] = useState<string[]>([]);
+  const [priceRange, setPriceRange] = useState<[number, number]>([
+    50000, 5000000,
+  ]);
+  const [bedroomsRange, setBedroomsRange] = useState<[number, number]>([1, 10]);
+  const [fullBathsRange, setFullBathsRange] = useState<[number, number]>([
+    1, 10,
+  ]);
+  const [halfBathsRange, setHalfBathsRange] = useState<[number, number]>([
+    1, 10,
+  ]);
+  const [areaRange, setAreaRange] = useState<[number, number]>([1000, 50000]);
+
   const [isSavedModalVisible, setSavedModalVisible] = useState(false);
   const [savedFilters, setSavedFilters] = useState<any[]>([]);
   const handleSaveFilter = (newFilter: any) => {
@@ -67,8 +79,13 @@ export default function FilterModal({
     const filters = {
       selectedType,
       selectedFeatures,
-      // TODO: collect values from RangeSelectors if you want to lift them up
+      priceRange,
+      bedroomsRange,
+      fullBathsRange,
+      halfBathsRange,
+      areaRange,
     };
+    console.log("Applying Filters:", filters);
     onSubmit?.(filters);
     setModalVisible(false);
   };
@@ -154,15 +171,40 @@ export default function FilterModal({
             min={50000}
             max={5000000}
             step={50000}
+            value={priceRange}
+            onChange={setPriceRange}
           />
-          <RangeSelector label="Bedrooms" min={1} max={10} step={1} />
-          <RangeSelector label="Full Baths" min={1} max={10} step={1} />
-          <RangeSelector label="Half Baths" min={1} max={10} step={1} />
+          <RangeSelector
+            label="Bedrooms"
+            min={1}
+            max={10}
+            step={1}
+            value={bedroomsRange}
+            onChange={setBedroomsRange}
+          />
+          <RangeSelector
+            label="Full Baths"
+            min={1}
+            max={10}
+            step={1}
+            value={fullBathsRange}
+            onChange={setFullBathsRange}
+          />
+          <RangeSelector
+            label="Half Baths"
+            min={1}
+            max={10}
+            step={1}
+            value={halfBathsRange}
+            onChange={setHalfBathsRange}
+          />
           <RangeSelector
             label="Living area (sqft)"
             min={1000}
             max={50000}
             step={100}
+            value={areaRange}
+            onChange={setAreaRange}
           />
 
           {/* Property Types */}

@@ -198,7 +198,17 @@ const ItemDetails = () => {
           <View style={{ alignItems: "flex-end" }}>
             <TouchableOpacity
               style={styles.detailButton}
-              onPress={() => router.push("/(screens)/Main/VisitSchedule")}
+              onPress={() =>
+                router.push({
+                  pathname: "/(screens)/Main/VisitSchedule",
+                  params: {
+                    title: propertyData?.title,
+                    address: propertyData?.address,
+                    price: propertyData?.price?.toString(),
+                    uuid: propertyData?.uuid,
+                  },
+                })
+              }
             >
               <Text style={{ color: "white", fontFamily: FontFamily.semiBold }}>
                 Request a visit
