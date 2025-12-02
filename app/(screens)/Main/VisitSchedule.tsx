@@ -18,7 +18,7 @@ import icons from "@/constants/icons";
 import { fontSize } from "@/constants/fontUtils";
 
 // API
-import apiClient, { BASE_URL } from "@/app/apis/apiClient";
+import apiClient from "@/app/apis/apiClient";
 
 // Components
 import Screen from "@/components/common/Screen";
@@ -28,8 +28,8 @@ import DatePicker from "@/components/common/DatePicker";
 
 const VisitSchedule = () => {
   const router = useRouter();
-  const { title, address, price, uuid } = useLocalSearchParams();
-  console.log("Received:", title, address, price, uuid);
+  const { title, address, price, uuid, selectedTab } = useLocalSearchParams();
+  console.log("Received:", title, address, price, uuid, selectedTab);
   const [date, setDate] = useState("");
   const [time, setTime] = useState("");
   const handleBack = () => {
@@ -46,18 +46,26 @@ const VisitSchedule = () => {
     }
 
     try {
-      const payload = {
-        propertyUid: uuid, // coming from route params
-        appointmentDate: formatDate(date), // → YYYY-MM-DD
+      // Determine API endpoint based on selectedTab
+      let endpoint = "/api/property/appointment"; // default
+      let payload: Record<string, any> = {
+        appointmentDate: formatDate(date),
         appointmentTime: formatTime(time),
       };
 
-      console.log("Sending Appointment Payload:", payload);
+      if (selectedTab === "Requested" || selectedTab === "Visits") {
+        endpoint = "/api/property/appointment/booker-reschedule";
+        payload.appointmentUid = uuid; // use appointmentUid
+      } else if (selectedTab === "Received" || selectedTab === "Confirmed") {
+        endpoint = "/api/property/appointment/owner-reschedule";
+        payload.appointmentUid = uuid; // use propertyUid
+      } else {
+        payload.propertyUid = uuid; // default
+      }
 
-      const response = await apiClient.post(
-        "/api/property/appointment",
-        payload
-      );
+      console.log("Sending Appointment Payload:", payload, "to", endpoint);
+
+      const response = await apiClient.post(endpoint, payload);
 
       console.log("Response:", response.data);
 
@@ -65,11 +73,11 @@ const VisitSchedule = () => {
       router.push("/(tabs)/Home");
     } catch (err) {
       const error = err as AxiosError<any>;
-      console.log("Catche error", error);
+      console.log("Caught error", error);
       console.log(error.response?.data);
       Alert.alert(
         "Alert",
-        error.response?.data?.message ||
+        error.response?.data?.error ||
           "You cannot book appointment on your own property"
       );
     }
@@ -126,34 +134,39 @@ const VisitSchedule = () => {
       <View style={styles.cardDetail}>
         <View style={{ width: "65%" }}>
           {/* Title + Type */}
-          <View style={{ flexDirection: "row", alignItems: "center" }}>
-            <Text style={styles.name}>
-              {" "}
-              {capitalizeFirstLetter(
-                Array.isArray(title) ? title[0] : title || ""
-              )}
-            </Text>
-          </View>
-
+          {title ? (
+            <View style={{ flexDirection: "row", alignItems: "center" }}>
+              <Text style={styles.name}>
+                {" "}
+                {capitalizeFirstLetter(
+                  Array.isArray(title) ? title[0] : title || ""
+                )}
+              </Text>
+            </View>
+          ) : null}
           {/* Address */}
-          <View style={styles.addressRow}>
-            <Ionicons
-              name="location"
-              size={14}
-              color={Colors.blue}
-              style={{ marginRight: RFPercentage(0.3) }}
-            />
-            <Text style={[styles.details, { fontSize: fontSize(9) }]}>
-              {address}
-            </Text>
-          </View>
+          {address ? (
+            <View style={styles.addressRow}>
+              <Ionicons
+                name="location"
+                size={14}
+                color={Colors.blue}
+                style={{ marginRight: RFPercentage(0.3) }}
+              />
+              <Text style={[styles.details, { fontSize: fontSize(9) }]}>
+                {address}
+              </Text>
+            </View>
+          ) : null}
         </View>
 
         {/* Price + Area */}
-        <View style={{ alignItems: "flex-end" }}>
-          <View style={{ marginTop: RFPercentage(1) }} />
-          <Text style={styles.name}>${price}</Text>
-        </View>
+        {price ? (
+          <View style={{ alignItems: "flex-end" }}>
+            <View style={{ marginTop: RFPercentage(1) }} />
+            <Text style={styles.name}>${price}</Text>
+          </View>
+        ) : null}
       </View>
 
       <View style={{ width: "90%", marginTop: RFPercentage(4) }}>

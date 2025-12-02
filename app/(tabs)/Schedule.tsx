@@ -7,9 +7,10 @@ import {
   TouchableOpacity,
   StyleSheet,
   Alert,
+  ScrollView,
 } from "react-native";
 import { RFPercentage } from "react-native-responsive-fontsize";
-import { Feather, Ionicons } from "@expo/vector-icons";
+import { Ionicons } from "@expo/vector-icons";
 // Components
 import Screen from "@/components/common/Screen";
 import CustomTabBar from "@/components/common/CustomTabBar";
@@ -201,58 +202,75 @@ const Schedule = () => {
       />
 
       {/* cards */}
-
-      {filteredData.length > 0 ? (
-        filteredData.map((item) => {
-          console.log("Mapping Card:", item);
-          return (
-            <ScheduleCard
-              key={item.id}
-              profileImage={item.profileImage}
-              name={item.name}
-              requestText={item.requestText}
-              propertyName={item.propertyName}
-              dateTime={item.dateTime}
-              statusTab={selectedTab}
-              ownerReschedule={item.ownerReschedule}
-              requestStatus={item.requestStatus}
-              onAccept={() => {
-                if (selectedTab === "Received") {
-                  handleOwnerResponse(item.id, "accepted");
-                } else if (selectedTab === "Requested") {
-                  handleBookerAccept(item.id);
-                }
-              }}
-              onReject={() => {
-                if (selectedTab === "Received") {
-                  handleOwnerResponse(item.id, "rejected");
-                } else if (selectedTab === "Confirmed") {
-                  handleOwnerResponse(item.id, "rejected");
-                }
-              }}
-              onCancel={() => {
-                if (selectedTab === "Requested" || selectedTab === "Visits") {
-                  handleCancel(item.id);
-                }
-              }}
-              onReschedule={() => console.log("Reschedule pressed")}
-              onDriveTo={() => router.push("/(screens)/Main/DriveToScreen")}
-            />
-          );
-        })
-      ) : (
-        <Text
-          style={{
-            marginTop: RFPercentage(5),
-            fontSize: fontSize(12),
-            fontFamily: FontFamily.medium,
-            color: Colors.lightGrey,
-            textAlign: "center",
-          }}
-        >
-          No results found
-        </Text>
-      )}
+      <ScrollView
+        contentContainerStyle={{
+          alignItems: "center",
+          paddingBottom: RFPercentage(5),
+        }}
+        style={{ width: "100%" }}
+        showsVerticalScrollIndicator={false}
+      >
+        {filteredData.length > 0 ? (
+          filteredData.map((item) => {
+            // console.log("Mapping Card:", item);
+            return (
+              <ScheduleCard
+                key={item.id}
+                profileImage={item.profileImage}
+                name={item.name}
+                requestText={item.requestText}
+                propertyName={item.propertyName}
+                dateTime={item.dateTime}
+                statusTab={selectedTab}
+                ownerReschedule={item.ownerReschedule}
+                requestStatus={item.requestStatus}
+                onAccept={() => {
+                  if (selectedTab === "Received") {
+                    handleOwnerResponse(item.id, "accepted");
+                  } else if (selectedTab === "Requested") {
+                    handleBookerAccept(item.id);
+                  }
+                }}
+                onReject={() => {
+                  if (selectedTab === "Received") {
+                    handleOwnerResponse(item.id, "rejected");
+                  } else if (selectedTab === "Confirmed") {
+                    handleOwnerResponse(item.id, "rejected");
+                  }
+                }}
+                onCancel={() => {
+                  if (selectedTab === "Requested" || selectedTab === "Visits") {
+                    handleCancel(item.id);
+                  }
+                }}
+                onReschedule={() => {
+                  router.push({
+                    pathname: "/(screens)/Main/VisitSchedule",
+                    params: {
+                      uuid: item.id,
+                      title: item.propertyName,
+                      selectedTab: selectedTab,
+                    },
+                  });
+                }}
+                onDriveTo={() => router.push("/(screens)/Main/DriveToScreen")}
+              />
+            );
+          })
+        ) : (
+          <Text
+            style={{
+              marginTop: RFPercentage(5),
+              fontSize: fontSize(12),
+              fontFamily: FontFamily.medium,
+              color: Colors.lightGrey,
+              textAlign: "center",
+            }}
+          >
+            No results found
+          </Text>
+        )}
+      </ScrollView>
     </Screen>
   );
 };
