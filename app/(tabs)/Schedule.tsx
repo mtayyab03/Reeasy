@@ -4,9 +4,9 @@ import {
   View,
   Text,
   TextInput,
-  Image,
   TouchableOpacity,
   StyleSheet,
+  Alert,
 } from "react-native";
 import { RFPercentage } from "react-native-responsive-fontsize";
 import { Feather, Ionicons } from "@expo/vector-icons";
@@ -76,6 +76,7 @@ const Schedule = () => {
           requestText: "Visiting Request Received",
           propertyName: item.propertyDetails.title,
           dateTime: `${item.appointmentDate} - ${item.appointmentTime}`,
+          ownerReschedule: item.propertyOwnerResheduled,
         })),
         Requested: requestedRes.data.data.map((item: any) => ({
           id: item.uuid,
@@ -101,10 +102,10 @@ const Schedule = () => {
         })),
         Visits: visitsRes.data.data.map((item: any) => ({
           id: item.uuid,
-          profileImage: item.booker?.profilePic
-            ? `${BASE_URL}${item.booker.profilePic}`
+          profileImage: item.propertyOwner?.profilePic
+            ? `${BASE_URL}${item.propertyOwner.profilePic}`
             : "",
-          name: item.booker?.fullName || "No Name",
+          name: item.propertyOwner?.fullName || "No Name",
           requestText: "Visits I Will Attend",
           propertyName: item.propertyDetails.title,
           dateTime: `${item.appointmentDate} - ${item.appointmentTime}`,
@@ -112,6 +113,59 @@ const Schedule = () => {
       });
     } catch (error) {
       console.log("Error fetching appointments:", error);
+    }
+  };
+
+  const handleOwnerResponse = async (
+    id: string,
+    response: "accepted" | "rejected"
+  ) => {
+    try {
+      const res = await apiClient.post(
+        "/api/property/appointment/owner-response",
+        {
+          appointmentUid: id,
+          response: response,
+        }
+      );
+      Alert.alert(
+        "Success",
+        response === "accepted"
+          ? "Appointment accepted successfully"
+          : "Appointment rejected successfully"
+      );
+      console.log("Owner Response Success:", res.data);
+      fetchAllAppointments();
+    } catch (e) {
+      console.log("Owner Response Error", e);
+    }
+  };
+
+  const handleBookerAccept = async (id: string) => {
+    try {
+      const res = await apiClient.post(
+        "/api/property/appointment/booker-accept",
+        {
+          appointmentUid: id,
+        }
+      );
+      Alert.alert("Success", "You accepted the appointment successfully");
+      console.log("Booker Accept Success:", res.data);
+      fetchAllAppointments();
+    } catch (e) {
+      console.log("Booker Accept Error", e);
+    }
+  };
+
+  const handleCancel = async (id: string) => {
+    try {
+      const res = await apiClient.delete(`/api/property/appointment/${id}`);
+      Alert.alert("Success", "Appointment cancelled successfully");
+      console.log("Cancel Success:", res.data);
+      fetchAllAppointments();
+    } catch (e) {
+      Alert.alert("Cancel Error");
+      console.log("Cancel Error", e);
     }
   };
 
@@ -149,24 +203,43 @@ const Schedule = () => {
       {/* cards */}
 
       {filteredData.length > 0 ? (
-        filteredData.map((item) => (
-          <ScheduleCard
-            key={item.id}
-            profileImage={item.profileImage}
-            name={item.name}
-            requestText={item.requestText}
-            propertyName={item.propertyName}
-            dateTime={item.dateTime}
-            statusTab={selectedTab}
-            ownerReschedule={item.ownerReschedule}
-            requestStatus={item.requestStatus}
-            onAccept={() => console.log(`Accepted ${item.id}`)}
-            onReject={() => console.log(`Rejected ${item.id}`)}
-            onReschedule={() => console.log(`Rescheduled ${item.id}`)}
-            onCancel={() => console.log(`Canceled ${item.id}`)}
-            onDriveTo={() => router.push("/(screens)/Main/DriveToScreen")}
-          />
-        ))
+        filteredData.map((item) => {
+          console.log("Mapping Card:", item);
+          return (
+            <ScheduleCard
+              key={item.id}
+              profileImage={item.profileImage}
+              name={item.name}
+              requestText={item.requestText}
+              propertyName={item.propertyName}
+              dateTime={item.dateTime}
+              statusTab={selectedTab}
+              ownerReschedule={item.ownerReschedule}
+              requestStatus={item.requestStatus}
+              onAccept={() => {
+                if (selectedTab === "Received") {
+                  handleOwnerResponse(item.id, "accepted");
+                } else if (selectedTab === "Requested") {
+                  handleBookerAccept(item.id);
+                }
+              }}
+              onReject={() => {
+                if (selectedTab === "Received") {
+                  handleOwnerResponse(item.id, "rejected");
+                } else if (selectedTab === "Confirmed") {
+                  handleOwnerResponse(item.id, "rejected");
+                }
+              }}
+              onCancel={() => {
+                if (selectedTab === "Requested" || selectedTab === "Visits") {
+                  handleCancel(item.id);
+                }
+              }}
+              onReschedule={() => console.log("Reschedule pressed")}
+              onDriveTo={() => router.push("/(screens)/Main/DriveToScreen")}
+            />
+          );
+        })
       ) : (
         <Text
           style={{

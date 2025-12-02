@@ -43,17 +43,25 @@ const ScheduleCard: React.FC<ScheduleCardProps> = ({
   const renderActions = () => {
     switch (statusTab) {
       case "Received":
+        console.log("owerr reschedule inner card:", ownerReschedule);
         return (
           <View style={styles.rightSection}>
-            <TouchableOpacity onPress={onAccept} style={styles.detailButton}>
-              <Text style={styles.buttonText}>Accept</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              onPress={onReject}
-              style={[styles.detailButton, { backgroundColor: Colors.red }]}
-            >
-              <Text style={styles.buttonText}>Reject</Text>
-            </TouchableOpacity>
+            {ownerReschedule !== true && (
+              <>
+                <TouchableOpacity
+                  onPress={onAccept}
+                  style={styles.detailButton}
+                >
+                  <Text style={styles.buttonText}>Accept</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  onPress={onReject}
+                  style={[styles.detailButton, { backgroundColor: Colors.red }]}
+                >
+                  <Text style={styles.buttonText}>Reject</Text>
+                </TouchableOpacity>
+              </>
+            )}
             <TouchableOpacity
               onPress={onReschedule}
               style={styles.detailButton}
@@ -73,7 +81,7 @@ const ScheduleCard: React.FC<ScheduleCardProps> = ({
               <Text style={styles.buttonText}>Reschedule</Text>
             </TouchableOpacity>
             <TouchableOpacity
-              onPress={onCancel}
+              onPress={onReject}
               style={[styles.detailButton, { backgroundColor: Colors.red }]}
             >
               <Text style={styles.buttonText}>Cancel</Text>
@@ -110,21 +118,17 @@ const ScheduleCard: React.FC<ScheduleCardProps> = ({
         return (
           <View style={styles.rightSection}>
             {ownerReschedule && (
-              <>
-                <TouchableOpacity
-                  onPress={onAccept}
-                  style={styles.detailButton}
-                >
-                  <Text style={styles.buttonText}>Accept</Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  onPress={onReject}
-                  style={[styles.detailButton, { backgroundColor: Colors.red }]}
-                >
-                  <Text style={styles.buttonText}>Reject</Text>
-                </TouchableOpacity>
-              </>
+              <TouchableOpacity onPress={onAccept} style={styles.detailButton}>
+                <Text style={styles.buttonText}>Accept</Text>
+              </TouchableOpacity>
             )}
+            <TouchableOpacity
+              onPress={onCancel}
+              style={[styles.detailButton, { backgroundColor: Colors.red }]}
+            >
+              <Text style={styles.buttonText}>Cancel</Text>
+            </TouchableOpacity>
+
             <TouchableOpacity
               style={[styles.detailButton, { backgroundColor: bgColor }]}
             >
