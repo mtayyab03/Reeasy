@@ -11,12 +11,33 @@ import {
   Platform,
 } from "react-native";
 import { RFPercentage } from "react-native-responsive-fontsize";
-import { useLocalSearchParams } from "expo-router";
-import { useRouter } from "expo-router";
+import { useLocalSearchParams, useRouter } from "expo-router";
+import { format } from "date-fns";
+
+// API
+import apiClient, { BASE_URL } from "@/app/apis/apiClient";
 
 // components
 import Screen from "@/components/common/Screen";
 import AppHeader from "@/components/common/AppHeader";
+
+// redux
+import { useSelector } from "react-redux";
+import { RootState } from "@/app/redux/store";
+
+// firebase
+import {
+  collection,
+  addDoc,
+  onSnapshot,
+  query,
+  orderBy,
+  serverTimestamp,
+  doc,
+  setDoc,
+} from "firebase/firestore";
+
+import { db } from "@/firebaseConfig"; // ✅ your firebase file
 
 // constants
 import { Colors } from "@/constants/Colors";
@@ -26,84 +47,201 @@ import { fontSize } from "@/constants/fontUtils";
 
 const ChatScreen = () => {
   const router = useRouter();
-  const { name, time } = useLocalSearchParams<{ name: string; time: string }>();
-  const [messages, setMessages] = useState([
-    { id: "1", text: "Hey, how are you?", sender: "other" }, // dummy initial msg
-  ]);
+  const params = useLocalSearchParams();
+  const accessToken = useSelector((state: RootState) => state.auth.accessToken);
+  const [name, setName] = useState<string>("");
+  const [senderUid, setSenderUid] = useState<string>("");
+  const [image, setImage] = useState<string | null>("");
+
+  useEffect(() => {
+    const fetchSenderUser = async () => {
+      try {
+        const response = await apiClient.get("/api/user/me");
+        const user = response.data.data;
+
+        setName(user.fullName || "");
+        setImage(user.profilePic ? `${BASE_URL}${user.profilePic}` : null);
+        setSenderUid(user.uuid);
+        console.log("data response", response.data);
+      } catch (error) {
+        console.log("Error fetching user", error);
+      }
+    };
+
+    fetchSenderUser();
+  }, []);
+
+  const ownerName =
+    typeof params.ownerName === "string"
+      ? params.ownerName
+      : params.ownerName?.[0] || "";
+
+  const ownerImage =
+    typeof params.ownerImage === "string"
+      ? params.ownerImage
+      : params.ownerImage?.[0] || "";
+
+  const ownerUid =
+    typeof params.ownerUid === "string"
+      ? params.ownerUid
+      : params.ownerUid?.[0] || "";
+  console.log("Chat User Name:", ownerName);
+  console.log("Chat User Image:", ownerImage);
+  console.log("Chat User UID:", ownerUid);
+
+  const [messages, setMessages] = useState<any[]>([]);
+
+  const chatId =
+    senderUid && ownerUid
+      ? senderUid < ownerUid
+        ? `${senderUid}_${ownerUid}`
+        : `${ownerUid}_${senderUid}`
+      : "";
+
+  console.log("chat id taken from current user token", chatId);
+
   const [input, setInput] = useState("");
   const flatListRef = useRef<FlatList>(null);
 
-  const handleSend = () => {
-    if (input.trim().length === 0) return;
+  const handleSend = async () => {
+    if (!input.trim()) return;
 
-    const newMessage = {
-      id: Date.now().toString(),
-      text: input,
-      sender: "me",
-    };
+    try {
+      const chatRef = doc(db, "chats", chatId);
 
-    setMessages((prev) => [...prev, newMessage]);
-    setInput("");
+      await setDoc(
+        chatRef,
+        {
+          users: [senderUid, ownerUid],
+
+          senderUid: senderUid,
+          senderName: name,
+          senderImage: image,
+
+          receiverUid: ownerUid,
+          receiverName: ownerName,
+          receiverImage: ownerImage,
+
+          lastMessage: input,
+          lastMessageTime: serverTimestamp(),
+        },
+        { merge: true }
+      );
+
+      await addDoc(collection(db, "chats", chatId, "messages"), {
+        text: input,
+        senderId: senderUid,
+        senderName: name,
+        senderImage: image,
+        createdAt: serverTimestamp(),
+      });
+
+      setInput("");
+    } catch (error) {
+      console.log("Send Message Error:", error);
+    }
   };
 
   // Auto-scroll to bottom when messages change
   useEffect(() => {
-    if (flatListRef.current) {
-      flatListRef.current.scrollToEnd({ animated: true });
-    }
-  }, [messages]);
+    if (!chatId) return;
+
+    const q = query(
+      collection(db, "chats", chatId, "messages"),
+      orderBy("createdAt", "asc")
+    );
+
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const msgs: any[] = [];
+
+      snapshot.forEach((doc) => {
+        msgs.push({
+          id: doc.id,
+          ...doc.data(),
+        });
+      });
+
+      setMessages(msgs.reverse());
+    });
+
+    return () => unsubscribe();
+  }, [chatId]);
 
   const handleBack = () => {
     router.back();
   };
-
+  useEffect(() => {
+    flatListRef.current?.scrollToEnd({ animated: true });
+  }, [messages]);
   return (
     <Screen style={styles.screen}>
-      <AppHeader title={name} onPress={() => handleBack()} />
+      <AppHeader title={ownerName} onPress={() => handleBack()} />
       <KeyboardAvoidingView
         style={styles.container}
         behavior={Platform.OS === "ios" ? "padding" : undefined}
       >
-        {/* Messages List */}
         <FlatList
           ref={flatListRef}
           data={messages}
           keyExtractor={(item) => item.id}
-          renderItem={({ item }) => (
-            <View
-              style={[
-                styles.messageRow,
-                {
-                  justifyContent:
-                    item.sender === "me" ? "flex-end" : "flex-start",
-                },
-              ]}
-            >
-              {item.sender === "other" && (
-                <Image source={icons.profile} style={styles.avatar} />
-              )}
+          inverted
+          renderItem={({ item }) => {
+            // ✅ ADD THIS LINE HERE
+            const isMe = item.senderId === senderUid;
 
+            return (
               <View
                 style={[
-                  styles.bubble,
-                  item.sender === "me" ? styles.me : styles.other,
+                  styles.messageRow,
+                  {
+                    justifyContent: isMe ? "flex-end" : "flex-start",
+                  },
                 ]}
               >
-                <Text
-                  style={{
-                    color: item.sender === "me" ? "#fff" : "#000",
-                    fontSize: 16,
-                  }}
-                >
-                  {item.text}
-                </Text>
-              </View>
+                {/* ✅ RECEIVER IMAGE (LEFT SIDE) */}
+                {!isMe && (
+                  <Image
+                    source={ownerImage ? { uri: ownerImage } : icons.emptyP}
+                    style={styles.avatar}
+                  />
+                )}
 
-              {item.sender === "me" && (
-                <Image source={icons.profile} style={styles.avatar} />
-              )}
-            </View>
-          )}
+                {/* ✅ MESSAGE BUBBLE */}
+                <View style={[styles.bubble, isMe ? styles.me : styles.other]}>
+                  <Text
+                    style={{
+                      color: isMe ? "#fff" : "#000",
+                      fontSize: 16,
+                    }}
+                  >
+                    {item.text}
+                  </Text>
+
+                  {/* ✅ TIMESTAMP */}
+                  <Text
+                    style={{
+                      fontSize: 12,
+                      color: "#ddd",
+                      marginTop: 4,
+                      alignSelf: isMe ? "flex-end" : "flex-start",
+                    }}
+                  >
+                    {item.createdAt?.toDate
+                      ? format(item.createdAt.toDate(), "hh:mm a")
+                      : ""}
+                  </Text>
+                </View>
+
+                {/* ✅ SENDER IMAGE (RIGHT SIDE) */}
+                {isMe && (
+                  <Image
+                    source={image ? { uri: image } : icons.emptyP}
+                    style={styles.avatar}
+                  />
+                )}
+              </View>
+            );
+          }}
           contentContainerStyle={{ padding: 10 }}
           style={{ flex: 1, width: "100%", marginTop: RFPercentage(2) }}
         />

@@ -1,11 +1,6 @@
-// Import the functions you need from the SDKs you need
 import { initializeApp } from "firebase/app";
-import { getAnalytics } from "firebase/analytics";
-// TODO: Add SDKs for Firebase products that you want to use
-// https://firebase.google.com/docs/web/setup#available-libraries
-
-// Your web app's Firebase configuration
-// For Firebase JS SDK v7.20.0 and later, measurementId is optional
+import { getFirestore } from "firebase/firestore";
+import { getAuth } from "firebase/auth";
 const firebaseConfig = {
   apiKey: "AIzaSyAMHvnoOtpkUrAodgNM20tS9yN8_aU8rp0",
   authDomain: "reeasy-80fd1.firebaseapp.com",
@@ -16,6 +11,11 @@ const firebaseConfig = {
   measurementId: "G-KJTPLDZVE3",
 };
 
-// Initialize Firebase
+// ✅ Initialize App
 const app = initializeApp(firebaseConfig);
-const analytics = getAnalytics(app);
+
+// ✅ Firebase Services for Chat
+export const db = getFirestore(app);
+export const auth = getAuth(app);
+
+export default app;

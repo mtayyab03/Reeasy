@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useRouter } from "expo-router";
 import {
   View,
@@ -10,9 +10,22 @@ import {
 } from "react-native";
 import { RFPercentage } from "react-native-responsive-fontsize";
 import { Feather, Ionicons } from "@expo/vector-icons";
+import { format } from "date-fns";
+
 // Components
 import Screen from "@/components/common/Screen";
 import AppLine from "@/components/common/AppLine";
+// firebase
+import {
+  collection,
+  query,
+  where,
+  onSnapshot,
+  orderBy,
+} from "firebase/firestore";
+
+import { db } from "@/firebaseConfig";
+import apiClient from "@/app/apis/apiClient";
 
 // constants
 import { Colors } from "@/constants/Colors";
@@ -62,9 +75,54 @@ const ChatPerson: MsgData[] = [
 const Chat = () => {
   const router = useRouter();
   const [searchQuery, setSearchQuery] = useState("");
-  const filteredChatPersons = ChatPerson.filter((person) =>
-    person.name.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const [chatList, setChatList] = useState<any[]>([]);
+  const [senderUid, setSenderUid] = useState("");
+
+  useEffect(() => {
+    const fetchSenderUser = async () => {
+      try {
+        const res = await apiClient.get("/api/user/me");
+        setSenderUid(res.data.data.uuid);
+      } catch (err) {
+        console.log("User fetch error", err);
+      }
+    };
+
+    fetchSenderUser();
+  }, []);
+
+  useEffect(() => {
+    if (!senderUid) return;
+
+    const q = query(
+      collection(db, "chats"),
+      where("users", "array-contains", senderUid),
+      orderBy("lastMessageTime", "desc")
+    );
+
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const chats: any[] = [];
+
+      snapshot.forEach((doc) => {
+        chats.push({
+          id: doc.id,
+          ...doc.data(),
+        });
+      });
+
+      setChatList(chats);
+    });
+
+    return () => unsubscribe();
+  }, [senderUid]);
+
+  const filteredChatPersons = chatList.filter((chat) => {
+    const otherUserName =
+      chat.senderUid === senderUid ? chat.receiverName : chat.senderName;
+
+    return otherUserName?.toLowerCase().includes(searchQuery.toLowerCase());
+  });
+
   return (
     <Screen style={styles.screen}>
       {/* Search bar */}
@@ -91,8 +149,14 @@ const Chat = () => {
       </View>
 
       <View style={{ width: "90%", alignItems: "center" }}>
-        {filteredChatPersons.length > 0 ? (
-          filteredChatPersons.map((item) => (
+        {filteredChatPersons.map((item) => {
+          const isMe = item.senderUid === senderUid;
+
+          const displayName = isMe ? item.receiverName : item.senderName;
+          const displayImage = isMe ? item.receiverImage : item.senderImage;
+          const displayUid = isMe ? item.receiverUid : item.senderUid;
+
+          return (
             <TouchableOpacity
               style={{ width: "100%" }}
               key={item.id}
@@ -101,8 +165,9 @@ const Chat = () => {
                 router.push({
                   pathname: "/(screens)/Main/ChatScreen",
                   params: {
-                    name: item.name,
-                    time: item.time,
+                    ownerName: displayName,
+                    ownerImage: displayImage,
+                    ownerUid: displayUid,
                   },
                 })
               }
@@ -117,44 +182,33 @@ const Chat = () => {
               >
                 {/* Profile Image */}
                 <Image
-                  source={{ uri: item.profileImage }}
+                  source={displayImage ? { uri: displayImage } : icons.emptyP}
                   style={styles.profileImage}
                 />
 
                 {/* Name + Last message */}
                 <View style={{ flex: 1, marginLeft: 10 }}>
-                  <Text style={styles.name}>{item.name}</Text>
-                  <Text style={styles.details}>{item.lastmsg}</Text>
+                  <Text style={styles.name}>{displayName}</Text>
+                  <Text style={styles.details}>{item.lastMessage}</Text>
                 </View>
 
                 {/* Time */}
-                <Text style={styles.time}>{item.time}</Text>
+                <Text style={styles.time}>
+                  {item.lastMessageTime?.toDate
+                    ? format(item.lastMessageTime.toDate(), "hh:mm a")
+                    : ""}
+                </Text>
               </View>
 
-              {/* Divider line after each item */}
               <AppLine />
             </TouchableOpacity>
-          ))
-        ) : (
-          // Empty state (no messages)
-          <View
-            style={{
-              flex: 1,
-              height: "100%",
-              alignItems: "center",
-              justifyContent: "center",
-            }}
-          >
+          );
+        })}
+        {filteredChatPersons.length === 0 && (
+          <View style={{ alignItems: "center", marginTop: 50 }}>
             <Ionicons name="mail-outline" size={50} color={Colors.lightGrey} />
-            <Text
-              style={{
-                marginTop: 10,
-                fontSize: 16,
-                fontFamily: FontFamily.medium,
-                color: Colors.lightGrey,
-              }}
-            >
-              No message
+            <Text style={{ marginTop: 10, color: Colors.lightGrey }}>
+              No conversations yet
             </Text>
           </View>
         )}

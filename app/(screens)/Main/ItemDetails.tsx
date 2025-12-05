@@ -265,7 +265,7 @@ const ItemDetails = () => {
             source={
               propertyData?.user?.profilePic
                 ? { uri: `${BASE_URL}${propertyData.user.profilePic}` }
-                : icons.pf1
+                : icons.emptyP
             }
             style={styles.profileImage}
           />
@@ -282,8 +282,11 @@ const ItemDetails = () => {
               router.push({
                 pathname: "/(screens)/Main/ChatScreen",
                 params: {
-                  name: "Daisy Shah",
-                  time: "12:00pm",
+                  ownerName: propertyData?.user?.fullName || "Owner",
+                  ownerImage: propertyData?.user?.profilePic
+                    ? `${BASE_URL}${propertyData.user.profilePic}`
+                    : "",
+                  ownerUid: propertyData?.userUid,
                 },
               })
             }
