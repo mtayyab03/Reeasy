@@ -9,7 +9,7 @@ import {
   StyleSheet,
 } from "react-native";
 import { RFPercentage } from "react-native-responsive-fontsize";
-import { Feather, Ionicons } from "@expo/vector-icons";
+import { Ionicons } from "@expo/vector-icons";
 import { format } from "date-fns";
 
 // Components

@@ -44,6 +44,7 @@ const ItemDetails = () => {
   const [propertyData, setPropertyData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [activeIndex, setActiveIndex] = useState(0);
+
   const [liked, setLiked] = useState(false);
   const flatListRef = useRef<FlatList>(null);
 
@@ -79,6 +80,12 @@ const ItemDetails = () => {
 
     fetchProperty();
   }, [parsedProperty?.uuid]);
+  const [mapRegion, setMapRegion] = useState({
+    latitude: propertyLatLng[0],
+    longitude: propertyLatLng[1],
+    latitudeDelta: 0.01,
+    longitudeDelta: 0.01,
+  });
 
   const images =
     propertyData?.images?.length > 0
@@ -86,6 +93,17 @@ const ItemDetails = () => {
           uri: `${BASE_URL}${img.imageUrl}`,
         }))
       : [icons.house1];
+  useEffect(() => {
+    if (propertyData?.latlng) {
+      const latlng = JSON.parse(propertyData.latlng);
+      setMapRegion({
+        latitude: latlng[0],
+        longitude: latlng[1],
+        latitudeDelta: 0.01,
+        longitudeDelta: 0.01,
+      });
+    }
+  }, [propertyData]);
 
   return (
     <Screen style={styles.screen}>
@@ -328,12 +346,8 @@ const ItemDetails = () => {
           {/* Map */}
           <MapView
             style={styles.map}
-            initialRegion={{
-              latitude: propertyLatLng[0],
-              longitude: propertyLatLng[1],
-              latitudeDelta: 0.01,
-              longitudeDelta: 0.01,
-            }}
+            region={mapRegion}
+            onRegionChangeComplete={(region) => setMapRegion(region)}
           >
             {/* Destination Marker */}
             <Marker

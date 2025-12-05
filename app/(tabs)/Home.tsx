@@ -13,7 +13,7 @@ import {
 import MapView, { Marker, Region } from "react-native-maps";
 import * as Location from "expo-location";
 import { RFPercentage } from "react-native-responsive-fontsize";
-import { Feather, Ionicons } from "@expo/vector-icons";
+import { Feather, Ionicons, MaterialIcons } from "@expo/vector-icons";
 // Components
 import Screen from "@/components/common/Screen";
 import FilterModal from "@/components/Specific/FilterModal";
@@ -57,6 +57,24 @@ export default function Home() {
     latitude: number;
     longitude: number;
   } | null>(null);
+  const [activeFilters, setActiveFilters] = useState<{
+    selectedType: string | null;
+    selectedFeatures: string[];
+    priceRange: [number, number] | null;
+    bedroomsRange: [number, number] | null;
+    fullBathsRange: [number, number] | null;
+    halfBathsRange: [number, number] | null;
+    areaRange: [number, number] | null;
+  }>({
+    selectedType: null,
+    selectedFeatures: [],
+    priceRange: null,
+    bedroomsRange: null,
+    fullBathsRange: null,
+    halfBathsRange: null,
+    areaRange: null,
+  });
+
   const propertyTypes = ["Single fam", "Condo", "Townhouse", "Multi Family"];
   const additionFeature = ["Pool", "Garage", "Water Front"];
   const mapRef = useRef<MapView>(null);
@@ -92,6 +110,35 @@ export default function Home() {
     };
 
     fetchProperties();
+  }, []);
+  // Add this useEffect to get user location on mount
+  useEffect(() => {
+    const getCurrentLocation = async () => {
+      const { status } = await Location.requestForegroundPermissionsAsync();
+      if (status !== "granted") {
+        alert("Permission to access location was denied");
+        return;
+      }
+
+      const location = await Location.getCurrentPositionAsync({});
+      const coords = {
+        latitude: location.coords.latitude,
+        longitude: location.coords.longitude,
+      };
+      setUserLocation(coords);
+
+      // Center map on user location
+      mapRef.current?.animateToRegion(
+        {
+          ...coords,
+          latitudeDelta: 0.01,
+          longitudeDelta: 0.01,
+        },
+        1000
+      );
+    };
+
+    getCurrentLocation();
   }, []);
 
   // fetch marker details on select
@@ -164,7 +211,11 @@ export default function Home() {
       <MapView
         ref={mapRef}
         style={StyleSheet.absoluteFillObject}
-        initialRegion={initialRegion}
+        region={
+          userLocation
+            ? { ...userLocation, latitudeDelta: 0.01, longitudeDelta: 0.01 }
+            : initialRegion
+        }
       >
         {propertyMarkers.map((marker) => (
           <Marker
@@ -186,11 +237,11 @@ export default function Home() {
 
         {/* User location marker */}
         {userLocation && (
-          <Marker coordinate={userLocation}>
-            <Image
-              source={icons.Pgreen}
-              style={{ width: 40, height: 40 }}
-              resizeMode="contain"
+          <Marker coordinate={userLocation} key="userLocation">
+            <MaterialIcons
+              color={Colors.blue}
+              size={24}
+              name={"location-history"}
             />
           </Marker>
         )}
@@ -360,7 +411,11 @@ export default function Home() {
         setModalVisible={setIsModalVisible}
         propertyTypes={propertyTypes}
         additionFeature={additionFeature}
-        onSubmit={(filters) => console.log("filters:", filters)}
+        onSubmit={(filters) => {
+          console.log("Applied Filters:", filters);
+          setActiveFilters(filters); // lift filters up
+          console.log("Applied active Filters:", activeFilters);
+        }}
       />
     </Screen>
   );

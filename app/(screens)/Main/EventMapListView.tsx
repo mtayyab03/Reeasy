@@ -53,14 +53,22 @@ const EventMapListView = () => {
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [properties, setProperties] = useState<Property[]>([]);
-  const [activeFilters, setActiveFilters] = useState({
+  const [activeFilters, setActiveFilters] = useState<{
+    selectedType: string | null;
+    selectedFeatures: string[];
+    priceRange: [number, number] | null;
+    bedroomsRange: [number, number] | null;
+    fullBathsRange: [number, number] | null;
+    halfBathsRange: [number, number] | null;
+    areaRange: [number, number] | null;
+  }>({
     selectedType: null,
-    selectedFeatures: [] as string[],
-    priceRange: null as [number, number] | null,
-    bedroomsRange: null as [number, number] | null,
-    fullBathsRange: null as [number, number] | null,
-    halfBathsRange: null as [number, number] | null,
-    areaRange: null as [number, number] | null,
+    selectedFeatures: [],
+    priceRange: null,
+    bedroomsRange: null,
+    fullBathsRange: null,
+    halfBathsRange: null,
+    areaRange: null,
   });
 
   const propertyTypes = ["Single fam", "Condo", "Townhouse", "Multi Family"];
@@ -68,97 +76,97 @@ const EventMapListView = () => {
   const handleBack = () => {
     router.back();
   };
+
+  const buildQueryParams = (filters: typeof activeFilters) => {
+    const params: Record<string, string> = {};
+
+    // Price
+    if (filters.priceRange && filters.priceRange[0] <= filters.priceRange[1]) {
+      params.minPrice = filters.priceRange[0].toString();
+      params.maxPrice = filters.priceRange[1].toString();
+    }
+
+    // Bedrooms
+    if (
+      filters.bedroomsRange &&
+      filters.bedroomsRange[0] <= filters.bedroomsRange[1]
+    ) {
+      params.minBedrooms = filters.bedroomsRange[0].toString();
+      params.maxBedrooms = filters.bedroomsRange[1].toString();
+    }
+
+    // Full baths
+    if (
+      filters.fullBathsRange &&
+      filters.fullBathsRange[0] <= filters.fullBathsRange[1]
+    ) {
+      params.minFullBath = filters.fullBathsRange[0].toString();
+      params.maxFullBath = filters.fullBathsRange[1].toString();
+    }
+
+    // Half baths
+    if (
+      filters.halfBathsRange &&
+      filters.halfBathsRange[0] <= filters.halfBathsRange[1]
+    ) {
+      params.minHalfBath = filters.halfBathsRange[0].toString();
+      params.maxHalfBath = filters.halfBathsRange[1].toString();
+    }
+
+    // Area
+    if (filters.areaRange && filters.areaRange[0] <= filters.areaRange[1]) {
+      params.minLivingArea = filters.areaRange[0].toString();
+      params.maxLivingArea = filters.areaRange[1].toString();
+    }
+
+    // Property Type (API may require lowercase)
+    if (filters.selectedType) {
+      params.propertyType = filters.selectedType.toLowerCase();
+    }
+
+    // Additional Features
+    if (filters.selectedFeatures?.length) {
+      params.pool = filters.selectedFeatures.includes("Pool")
+        ? "true"
+        : "false";
+      params.garage = filters.selectedFeatures.includes("Garage")
+        ? "true"
+        : "false";
+      params.waterFront = filters.selectedFeatures.includes("Water Front")
+        ? "true"
+        : "false";
+    }
+
+    return params;
+  };
+
+  const fetchFilteredProperties = async () => {
+    try {
+      const queryParams = buildQueryParams(activeFilters);
+      const queryString = new URLSearchParams(queryParams).toString();
+      console.log("/api/property?" + queryString);
+      const response = await apiClient.get(`/api/property?${queryString}`);
+      const data: Property[] = response.data.data.properties;
+
+      const mapped = data.map((prop) => ({
+        ...prop,
+        displayImage:
+          prop.images && prop.images.length > 0
+            ? { uri: `${BASE_URL}${prop.images[0].imageUrl}` }
+            : icons.house1,
+      }));
+
+      setProperties(mapped); // ✅ store results here
+    } catch (error) {
+      console.log("API Error:", error);
+    }
+  };
+
   useEffect(() => {
-    const fetchProperties = async () => {
-      try {
-        const response = await apiClient.get("/api/property");
-        const data: Property[] = response.data.data.properties;
+    fetchFilteredProperties();
+  }, [activeFilters, searchQuery]);
 
-        // Map properties and set default image if no images
-        const mapped = data.map((prop) => ({
-          ...prop,
-          displayImage:
-            prop.images && prop.images.length > 0
-              ? { uri: `${BASE_URL}${prop.images[0].imageUrl}` }
-              : icons.house1, // default image
-        }));
-
-        setProperties(mapped);
-      } catch (error) {
-        console.log("API Error:", error);
-      }
-    };
-
-    fetchProperties();
-  }, []);
-
-  const filteredProperties = properties.filter((item) => {
-    // 1️⃣ Search filter
-    const matchesSearch = item.title
-      .toLowerCase()
-      .includes(searchQuery.toLowerCase());
-
-    // 2️⃣ Property type filter
-    const matchesType = activeFilters.selectedType
-      ? item.propertyType === activeFilters.selectedType
-      : true;
-
-    // 3️⃣ Additional features filter
-    const matchesFeatures =
-      activeFilters.selectedFeatures?.length > 0
-        ? activeFilters.selectedFeatures.every((f) =>
-            item.features?.includes(f)
-          )
-        : true;
-
-    // 4️⃣ Price range filter
-    const matchesPrice =
-      activeFilters.priceRange?.length === 2
-        ? item.price >= activeFilters.priceRange[0] &&
-          item.price <= activeFilters.priceRange[1]
-        : true;
-
-    // 5️⃣ Bedrooms filter
-    const matchesBedrooms =
-      activeFilters.bedroomsRange?.length === 2
-        ? item.bedrooms >= activeFilters.bedroomsRange[0] &&
-          item.bedrooms <= activeFilters.bedroomsRange[1]
-        : true;
-
-    // 6️⃣ Full baths filter
-    const matchesFullBaths =
-      activeFilters.fullBathsRange?.length === 2
-        ? item.fullBaths >= activeFilters.fullBathsRange[0] &&
-          item.fullBaths <= activeFilters.fullBathsRange[1]
-        : true;
-
-    // 7️⃣ Half baths filter
-    const matchesHalfBaths =
-      activeFilters.halfBathsRange?.length === 2
-        ? item.halfBaths >= activeFilters.halfBathsRange[0] &&
-          item.halfBaths <= activeFilters.halfBathsRange[1]
-        : true;
-
-    // 8️⃣ Area filter
-    const matchesArea =
-      activeFilters.areaRange?.length === 2
-        ? item.area >= activeFilters.areaRange[0] &&
-          item.area <= activeFilters.areaRange[1]
-        : true;
-
-    // ✅ Only include item if all conditions match
-    return (
-      matchesSearch &&
-      matchesType &&
-      matchesFeatures &&
-      matchesPrice &&
-      matchesBedrooms &&
-      matchesFullBaths &&
-      matchesHalfBaths &&
-      matchesArea
-    );
-  });
-  console.log("Filtered properties", filteredProperties);
+  console.log("Filtered properties", properties);
   return (
     <Screen style={styles.screen}>
       <AppHeader title="Property List" onPress={() => handleBack()} />
@@ -206,7 +214,7 @@ const EventMapListView = () => {
         style={{ width: "100%" }}
         showsVerticalScrollIndicator={false}
       >
-        {filteredProperties.length === 0 ? (
+        {properties.length === 0 ? (
           <View style={{ marginTop: RFPercentage(5) }}>
             <Text
               style={{
@@ -219,7 +227,7 @@ const EventMapListView = () => {
             </Text>
           </View>
         ) : (
-          filteredProperties.map((property) => (
+          properties.map((property: Property) => (
             <ProductCard
               key={property.uuid}
               image={property.displayImage} // first image or default
