@@ -12,6 +12,7 @@ import {
   NativeSyntheticEvent,
   TouchableOpacity,
   ScrollView,
+  Alert,
 } from "react-native";
 import { RFPercentage } from "react-native-responsive-fontsize";
 import { Ionicons } from "@expo/vector-icons";
@@ -44,8 +45,11 @@ const ItemDetails = () => {
   const [propertyData, setPropertyData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [activeIndex, setActiveIndex] = useState(0);
-
   const [liked, setLiked] = useState(false);
+  const [favouritePropertyUid, setFavouritePropertyUid] = useState<
+    string | null
+  >(null);
+
   const flatListRef = useRef<FlatList>(null);
 
   const handleScroll = (event: NativeSyntheticEvent<NativeScrollEvent>) => {
@@ -55,6 +59,43 @@ const ItemDetails = () => {
     );
     if (slide !== activeIndex) {
       setActiveIndex(slide);
+    }
+  };
+  useEffect(() => {
+    if (propertyData) {
+      setLiked(propertyData.isFavourited);
+      setFavouritePropertyUid(propertyData.favouritePropertyUid); // may be null
+    }
+  }, [propertyData]);
+
+  const toggleFavourite = async () => {
+    if (!propertyData) return;
+
+    try {
+      if (liked) {
+        // Already favorited → call DELETE
+        if (favouritePropertyUid) {
+          await apiClient.delete(
+            `/api/property/favourite/${favouritePropertyUid}`
+          );
+          setLiked(false);
+          setFavouritePropertyUid(null);
+          Alert.alert("Removed", "Property removed from favorites");
+        }
+      } else {
+        // Not favorited → call POST
+        const response = await apiClient.post(`/api/property/favourite`, {
+          propertyUid: propertyData.uuid,
+        });
+        if (response.data.success) {
+          setLiked(true);
+          setFavouritePropertyUid(response.data.data.uuid); // returned favourite UID
+          Alert.alert("Added", "Property added to favorites");
+        }
+      }
+    } catch (error) {
+      console.log("Favorite toggle error:", error);
+      // Alert.alert("Error", "Failed to update favorite");
     }
   };
 
@@ -169,7 +210,7 @@ const ItemDetails = () => {
             <TouchableOpacity
               activeOpacity={0.7}
               style={[styles.circleBtn, { marginLeft: RFPercentage(1) }]}
-              onPress={() => setLiked(!liked)}
+              onPress={toggleFavourite}
             >
               <Ionicons
                 name={liked ? "heart" : "heart-outline"}
@@ -366,14 +407,14 @@ const ItemDetails = () => {
           </MapView>
 
           {/* Top-left "View Direction" Button */}
-          <TouchableOpacity
+          {/* <TouchableOpacity
             style={styles.viewDirectionBtn}
             activeOpacity={0.7}
             onPress={() => router.push("/(screens)/Main/DriveToScreen")} // 👉 change route as needed
           >
             <Image source={icons.availb} style={{ width: 24, height: 24 }} />
             <Text style={styles.availableText}>View Direction</Text>
-          </TouchableOpacity>
+          </TouchableOpacity> */}
         </View>
       </ScrollView>
     </Screen>

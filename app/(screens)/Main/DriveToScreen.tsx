@@ -12,9 +12,13 @@ import { Feather, Ionicons } from "@expo/vector-icons";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import MapView, { Marker, Polyline, LatLng } from "react-native-maps";
 import polyline from "@mapbox/polyline";
+import * as Location from "expo-location";
 
 // Components
 import Screen from "@/components/common/Screen";
+
+// API
+import apiClient, { BASE_URL } from "@/app/apis/apiClient";
 
 // constants
 import { Colors } from "@/constants/Colors";
@@ -24,28 +28,83 @@ import icons from "@/constants/icons";
 
 const DriveToScreen = () => {
   const router = useRouter();
-  const { profileImage, name, type, address, latitude, longitude } =
-    useLocalSearchParams();
+  const params = useLocalSearchParams();
+
+  const propertyDetails = params.propertyDetails
+    ? JSON.parse(params.propertyDetails as string)
+    : null;
+
+  const propertyOwner = params.propertyOwner
+    ? JSON.parse(params.propertyOwner as string)
+    : null;
+
+  console.log("PROPERTY DETAILS:", propertyDetails);
+  console.log("PROPERTY OWNER:", propertyOwner);
+
   const [showBanner, setShowBanner] = useState(true);
   const [routeCoords, setRouteCoords] = useState<LatLng[]>([]);
-  const selectedMarker = {
-    id: 1,
-    profileImage: "https://randomuser.me/api/portraits/men/32.jpg",
-    name: "John Doe",
-    type: "Apartment",
-    address: "123 Main Street, San Francisco, CA",
-    latitude: 37.78925,
-    longitude: -122.4314,
+  let parsedLat = 0;
+  let parsedLng = 0;
+
+  if (propertyDetails?.latlng) {
+    try {
+      const coords = JSON.parse(propertyDetails.latlng); // converts string -> array
+      parsedLat = Number(coords[0]);
+      parsedLng = Number(coords[1]);
+    } catch (e) {
+      console.log("LatLng parse error:", e);
+    }
+  }
+
+  // Final destination
+  const destination = {
+    latitude: parsedLat || 37.78925,
+    longitude: parsedLng || -122.4314,
   };
 
-  const [currentLocation, setCurrentLocation] = useState({
-    latitude: 37.78825, // mock current location
-    longitude: -122.4324,
-  });
+  // User current location (mock)
+  const [currentLocation, setCurrentLocation] = useState<LatLng | null>(null);
+  const getCurrentLocation = async () => {
+    try {
+      let { status } = await Location.requestForegroundPermissionsAsync();
+      if (status !== "granted") {
+        console.log("Permission denied");
+        return;
+      }
 
-  const destination = {
-    latitude: Number(latitude) || 37.78925,
-    longitude: Number(longitude) || -122.4314,
+      const loc = await Location.getCurrentPositionAsync({});
+      setCurrentLocation({
+        latitude: loc.coords.latitude,
+        longitude: loc.coords.longitude,
+      });
+    } catch (error) {
+      console.log("Location error:", error);
+    }
+  };
+  useEffect(() => {
+    const init = async () => {
+      await getCurrentLocation(); // get real location first
+    };
+
+    init();
+  }, []);
+
+  // Fetch route AFTER current location is available
+  useEffect(() => {
+    if (currentLocation) {
+      fetchRoute();
+    }
+  }, [currentLocation]);
+
+  // Bottom card data
+  const selectedMarker = {
+    profileImage: propertyOwner?.profilePic
+      ? `${BASE_URL}${propertyOwner.profilePic}`
+      : icons.emptyP,
+
+    name: propertyOwner?.fullName || "Unknown Owner",
+    type: propertyDetails?.title || "Property",
+    address: propertyDetails?.address || "No address available",
   };
 
   // Example polyline (straight line between currentLocation and destination)
@@ -59,7 +118,7 @@ const DriveToScreen = () => {
   // };
 
   const fetchRoute = async () => {
-    const origin = `${currentLocation.latitude},${currentLocation.longitude}`;
+    const origin = `${currentLocation?.latitude},${currentLocation?.longitude}`;
     const dest = `${destination.latitude},${destination.longitude}`;
     const API_KEY = "AIzaSyDbPuqJ96Z93BSDauOCQqXTNfXVg2yA2DQ";
     try {
@@ -100,6 +159,29 @@ const DriveToScreen = () => {
     fetchRoute();
   }, []);
 
+  const calculateDistance = (
+    lat1: number,
+    lon1: number,
+    lat2: number,
+    lon2: number
+  ): string => {
+    const R = 6371; // kilometers
+    const dLat = ((lat2 - lat1) * Math.PI) / 180;
+    const dLon = ((lon2 - lon1) * Math.PI) / 180;
+
+    const a =
+      Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+      Math.cos(lat1 * (Math.PI / 180)) *
+        Math.cos(lat2 * (Math.PI / 180)) *
+        Math.sin(dLon / 2) *
+        Math.sin(dLon / 2);
+
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    const distance = R * c;
+
+    return distance.toFixed(1); // return "X.X"
+  };
+
   return (
     <View style={styles.screen}>
       {/* Back Arrow */}
@@ -110,44 +192,46 @@ const DriveToScreen = () => {
       </View>
 
       {/* Map */}
-      <MapView
-        style={styles.map}
-        initialRegion={{
-          latitude: currentLocation.latitude,
-          longitude: currentLocation.longitude,
-          latitudeDelta: 0.01,
-          longitudeDelta: 0.01,
-        }}
-      >
-        {/* Start Marker */}
-        <Marker coordinate={currentLocation} title="You">
-          <Image
-            source={icons.direc}
-            style={{ width: 50, height: 50, resizeMode: "contain" }}
-          />
-        </Marker>
-
-        {/* Destination Marker */}
-        <Marker
-          coordinate={destination}
-          title={selectedMarker.name}
-          description={selectedMarker.address}
+      {currentLocation && (
+        <MapView
+          style={styles.map}
+          initialRegion={{
+            latitude: currentLocation.latitude,
+            longitude: currentLocation.longitude,
+            latitudeDelta: 0.01,
+            longitudeDelta: 0.01,
+          }}
         >
-          <Image
-            source={icons.drivloc}
-            style={{ width: 50, height: 50, resizeMode: "contain" }}
-          />
-        </Marker>
+          {/* Current Location Marker */}
+          <Marker coordinate={currentLocation} title="You">
+            <Image
+              source={icons.direc}
+              style={{ width: 50, height: 50, resizeMode: "contain" }}
+            />
+          </Marker>
 
-        {/* Route Polyline */}
-        {routeCoords.length > 0 && (
-          <Polyline
-            coordinates={routeCoords}
-            strokeColor={Colors.blue}
-            strokeWidth={4}
-          />
-        )}
-      </MapView>
+          {/* Destination Marker */}
+          <Marker
+            coordinate={destination}
+            title={selectedMarker.name}
+            description={selectedMarker.address}
+          >
+            <Image
+              source={icons.drivloc}
+              style={{ width: 50, height: 50, resizeMode: "contain" }}
+            />
+          </Marker>
+
+          {/* Route Polyline */}
+          {routeCoords.length > 0 && (
+            <Polyline
+              coordinates={routeCoords}
+              strokeColor={Colors.blue}
+              strokeWidth={4}
+            />
+          )}
+        </MapView>
+      )}
 
       {showBanner && (
         <View style={styles.bannerContainer}>
@@ -203,7 +287,14 @@ const DriveToScreen = () => {
                   fontFamily: FontFamily.semiBold,
                 }}
               >
-                1.7 km away
+                {currentLocation
+                  ? `${calculateDistance(
+                      currentLocation.latitude,
+                      currentLocation.longitude,
+                      destination.latitude,
+                      destination.longitude
+                    )} km away`
+                  : "Loading..."}
               </Text>
             </View>
           </View>

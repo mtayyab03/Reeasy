@@ -19,6 +19,9 @@ interface ProductCardProps {
   onPress?: () => void;
   onPressCard?: () => void;
   sponsored?: boolean;
+
+  isFavourite?: boolean; // NEW
+  onToggleFavourite?: () => void; // NEW
 }
 
 const ProductCard: React.FC<ProductCardProps> = ({
@@ -32,8 +35,9 @@ const ProductCard: React.FC<ProductCardProps> = ({
   onPress,
   onPressCard,
   sponsored,
+  isFavourite,
+  onToggleFavourite,
 }) => {
-  const [isFavourite, setIsFavourite] = useState(true);
   const capitalizeFirstLetter = (text: string) => {
     if (!text) return "";
     return text.charAt(0).toUpperCase() + text.slice(1);
@@ -51,7 +55,7 @@ const ProductCard: React.FC<ProductCardProps> = ({
       {cardpage === "favorite" && (
         <TouchableOpacity
           activeOpacity={0.7}
-          onPress={() => setIsFavourite(!isFavourite)}
+          onPress={onToggleFavourite}
           style={styles.favCircle}
         >
           <Ionicons

@@ -139,6 +139,14 @@ const MyItems = () => {
                   params: { property: JSON.stringify(property) },
                 })
               }
+              onPressCard={() =>
+                router.push({
+                  pathname: "/(screens)/Main/ItemDetails",
+                  params: {
+                    property: JSON.stringify(property),
+                  },
+                })
+              }
             />
           ))}
         </ScrollView>

@@ -34,6 +34,21 @@ type ScheduleItem = {
   dateTime: string;
   requestStatus?: any;
   ownerReschedule?: boolean;
+
+  // 👉 ADD THESE TWO
+  propertyDetails?: {
+    uuid: string;
+    title: string;
+    address: string;
+    latlng: string;
+  };
+
+  propertyOwner?: {
+    fullName: string;
+    email: string;
+    phone: string;
+    profilePic: string;
+  };
 };
 
 const Schedule = () => {
@@ -110,6 +125,10 @@ const Schedule = () => {
           requestText: "Visits I Will Attend",
           propertyName: item.propertyDetails.title,
           dateTime: `${item.appointmentDate} - ${item.appointmentTime}`,
+
+          // 👉 ADD THESE TWO FULL OBJECTS
+          propertyDetails: item.propertyDetails,
+          propertyOwner: item.propertyOwner,
         })),
       });
     } catch (error) {
@@ -253,7 +272,16 @@ const Schedule = () => {
                     },
                   });
                 }}
-                onDriveTo={() => router.push("/(screens)/Main/DriveToScreen")}
+                onDriveTo={() =>
+                  router.push({
+                    pathname: "/(screens)/Main/DriveToScreen",
+                    params: {
+                      id: item.id,
+                      propertyDetails: JSON.stringify(item.propertyDetails),
+                      propertyOwner: JSON.stringify(item.propertyOwner),
+                    },
+                  })
+                }
               />
             );
           })

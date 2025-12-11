@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useRouter } from "expo-router";
 import {
   View,
@@ -8,6 +8,7 @@ import {
   TouchableOpacity,
   StyleSheet,
   ScrollView,
+  Alert,
 } from "react-native";
 import { RFPercentage } from "react-native-responsive-fontsize";
 import { Ionicons } from "@expo/vector-icons";
@@ -16,84 +17,99 @@ import Screen from "@/components/common/Screen";
 import AppHeader from "@/components/common/AppHeader";
 import ProductCard from "@/components/Specific/ProductCard";
 
+// API
+import apiClient, { BASE_URL } from "@/app/apis/apiClient";
+
 // constants
 import { Colors } from "@/constants/Colors";
 import { FontFamily } from "@/constants/font";
 import icons from "@/constants/icons";
 import { fontSize } from "@/constants/fontUtils";
 
-type MarkerData = {
-  id: string;
-  name: string;
-  type: string;
-  address: string;
-  price: string;
-  title: string;
-  area: string;
-  coordinate: { latitude: number; longitude: number };
-  profileImage: string;
-  icon: any;
-  propertyImg: any;
-  sponsored: string;
-  status: "available" | "unavailable";
+type FavouriteItem = {
+  uuid: string;
+  propertyDetails: {
+    uuid: string;
+    title: string;
+    price: number;
+    area: number;
+    address: string;
+    propertyType: string;
+    images: { imageUrl: string }[];
+  };
 };
-
-const PropertyData: MarkerData[] = [
-  {
-    id: "1",
-    name: "John Doe",
-    type: "Single fam",
-    address: "123 Green St, New York",
-    coordinate: { latitude: 40.7128, longitude: -74.006 },
-    profileImage: "https://randomuser.me/api/portraits/men/1.jpg",
-    icon: icons.Pgreen,
-    propertyImg: icons.house1,
-    title: "Sterlin Apartmet",
-    price: "$200k",
-    area: "2200sqft",
-    sponsored: "true",
-    status: "available",
-  },
-  {
-    id: "2",
-    name: "Jane Smith",
-    type: "Condo",
-    address: "456 Red Ave, New York",
-    coordinate: { latitude: 40.7138, longitude: -74.001 },
-    profileImage: "https://randomuser.me/api/portraits/women/2.jpg",
-    icon: icons.Pred,
-    propertyImg: icons.house2,
-    title: "DHA liberty Villa",
-    price: "$550k",
-    area: "310sqft",
-    sponsored: "true",
-    status: "unavailable",
-  },
-  {
-    id: "3",
-    name: "Mercy Krov",
-    type: "Multi Family",
-    address: "456 Red Ave, New York",
-    coordinate: { latitude: 40.7258, longitude: -74.011 },
-    profileImage: "https://randomuser.me/api/portraits/women/3.jpg",
-    icon: icons.Pred,
-    propertyImg: icons.house3,
-    title: "Saudia Gilbert Villa",
-    price: "$950k",
-    area: "3300sqft",
-    sponsored: "false",
-    status: "unavailable",
-  },
-];
 
 const FavoriteScreen = () => {
   const router = useRouter();
   const [searchQuery, setSearchQuery] = useState("");
+  const [favProperties, setFavProperties] = useState<FavouriteItem[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [favoriteList, setFavoriteList] = useState<string[]>([]); // store UUIDs
+
   const handleBack = () => {
     router.back();
   };
-  const filteredProperties = PropertyData.filter((item) =>
-    item.title.toLowerCase().includes(searchQuery.toLowerCase())
+  const toggleFavourite = async (propertyId: string) => {
+    try {
+      await apiClient.delete(`/api/property/favourite/${propertyId}`);
+
+      // remove from favoriteList (for heart state)
+      setFavoriteList((prev) => prev.filter((id) => id !== propertyId));
+
+      // remove from favProperties (to remove card)
+      setFavProperties((prev) =>
+        prev.filter((item) => item.uuid !== propertyId)
+      );
+
+      Alert.alert("Removed", "Property has been removed from favorites");
+    } catch (error: any) {
+      if (error.response?.status === 409) {
+        // Already removed, still remove locally
+        setFavoriteList((prev) => prev.filter((id) => id !== propertyId));
+        setFavProperties((prev) =>
+          prev.filter((item) => item.uuid !== propertyId)
+        );
+
+        Alert.alert(
+          "Already removed",
+          "This property is no longer in favorites"
+        );
+      } else {
+        console.log("Remove favourite error:", error);
+        Alert.alert("Error", "Failed to remove property from favorites");
+      }
+    }
+  };
+
+  // Fetch Favorite Properties
+  const fetchFavorites = async () => {
+    try {
+      setLoading(true);
+      const response = await apiClient.get("/api/property/favourite");
+
+      if (response.data?.success) {
+        setFavProperties(response.data.data);
+
+        // fill favoriteList with all propertyDetails.uuid
+        const favIds = response.data.data.map(
+          (item: FavouriteItem) => item.uuid
+        );
+        setFavoriteList(favIds);
+      }
+    } catch (error) {
+      console.log("Fav API Error:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchFavorites();
+  }, []);
+
+  // Search Filter
+  const filteredProperties = favProperties.filter((item) =>
+    item.propertyDetails.title.toLowerCase().includes(searchQuery.toLowerCase())
   );
   return (
     <Screen style={styles.screen}>
@@ -120,7 +136,6 @@ const FavoriteScreen = () => {
         />
       </View>
 
-      {/* 🏡 Scrollable property list */}
       <ScrollView
         contentContainerStyle={{
           alignItems: "center",
@@ -129,20 +144,46 @@ const FavoriteScreen = () => {
         style={{ width: "100%" }}
         showsVerticalScrollIndicator={false}
       >
-        {filteredProperties.map((property) => (
-          <ProductCard
-            key={property.id}
-            image={property.propertyImg}
-            title={property.title}
-            address={property.address}
-            price={property.price}
-            area={property.area}
-            type={property.type}
-            cardpage="favorite" // or "Favourite" based on requirement
-            onPressCard={() => router.push("/(screens)/Main/ItemDetails")}
-            // onPress={() => router.push("/editproduct")}
-          />
-        ))}
+        {loading && <Text style={{ marginTop: 20 }}>Loading...</Text>}
+
+        {!loading && filteredProperties.length === 0 && (
+          <Text style={{ marginTop: 20, fontSize: 16, color: Colors.darkGrey }}>
+            No Data Found
+          </Text>
+        )}
+
+        {!loading &&
+          filteredProperties.map((item) => {
+            const prop = item.propertyDetails;
+
+            const imageSource =
+              prop.images && prop.images.length > 0
+                ? { uri: `${BASE_URL}${prop.images[0].imageUrl}` }
+                : icons.house1;
+
+            return (
+              <ProductCard
+                key={prop.uuid}
+                image={imageSource}
+                title={prop.title}
+                address={prop.address}
+                price={`$${prop.price}`}
+                area={`${prop.area} sqft`}
+                type={prop.propertyType}
+                cardpage="favorite"
+                isFavourite={favoriteList.includes(item.uuid)}
+                onToggleFavourite={() => toggleFavourite(item.uuid)} // use top-level uuid
+                onPressCard={() =>
+                  router.push({
+                    pathname: "/(screens)/Main/ItemDetails",
+                    params: {
+                      property: JSON.stringify(prop),
+                    },
+                  })
+                }
+              />
+            );
+          })}
       </ScrollView>
 
       {/* list end */}
