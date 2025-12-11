@@ -8,6 +8,7 @@ import {
   TouchableOpacity,
   StyleSheet,
   ScrollView,
+  ActivityIndicator,
 } from "react-native";
 import { RFPercentage } from "react-native-responsive-fontsize";
 import { Ionicons } from "@expo/vector-icons";
@@ -46,6 +47,8 @@ const MyItems = () => {
   const router = useRouter();
   const [searchQuery, setSearchQuery] = useState("");
   const [properties, setProperties] = useState<Property[]>([]);
+  const [loading, setLoading] = useState(false);
+
   const handleBack = () => {
     router.back();
   };
@@ -53,6 +56,7 @@ const MyItems = () => {
   useEffect(() => {
     const fetchProperties = async () => {
       try {
+        setLoading(true);
         const response = await apiClient.get("/api/property/mine/");
         const data: Property[] = response.data.data; // ✅ correct
 
@@ -67,6 +71,8 @@ const MyItems = () => {
         setProperties(mapped);
       } catch (error) {
         console.log("API Error:", error);
+      } finally {
+        setLoading(false); // ✅ stop loading
       }
     };
 
@@ -102,7 +108,20 @@ const MyItems = () => {
       </View>
 
       {/* 🏡 Property List or Empty Message */}
-      {filteredProperties.length === 0 ? (
+      {loading ? (
+        <View style={{ marginTop: RFPercentage(5), alignItems: "center" }}>
+          <ActivityIndicator size="large" color={Colors.blue} />
+          <Text
+            style={{
+              marginTop: 10,
+              fontFamily: FontFamily.medium,
+              color: Colors.grey,
+            }}
+          >
+            Loading items...
+          </Text>
+        </View>
+      ) : filteredProperties.length === 0 ? (
         <View style={{ marginTop: RFPercentage(5), alignItems: "center" }}>
           <Text
             style={{

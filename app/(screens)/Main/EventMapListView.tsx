@@ -7,6 +7,7 @@ import {
   StyleSheet,
   ScrollView,
   Text,
+  ActivityIndicator,
 } from "react-native";
 import { RFPercentage } from "react-native-responsive-fontsize";
 import { Ionicons } from "@expo/vector-icons";
@@ -53,6 +54,8 @@ const EventMapListView = () => {
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [properties, setProperties] = useState<Property[]>([]);
+  const [loading, setLoading] = useState(false);
+
   const [activeFilters, setActiveFilters] = useState<{
     selectedType: string | null;
     selectedFeatures: string[];
@@ -142,6 +145,7 @@ const EventMapListView = () => {
 
   const fetchFilteredProperties = async () => {
     try {
+      setLoading(true);
       const queryParams = buildQueryParams(activeFilters);
       const queryString = new URLSearchParams(queryParams).toString();
       console.log("/api/property?" + queryString);
@@ -159,6 +163,8 @@ const EventMapListView = () => {
       setProperties(mapped); // ✅ store results here
     } catch (error) {
       console.log("API Error:", error);
+    } finally {
+      setLoading(false); // ✅ end loading
     }
   };
 
@@ -214,7 +220,21 @@ const EventMapListView = () => {
         style={{ width: "100%" }}
         showsVerticalScrollIndicator={false}
       >
-        {properties.length === 0 ? (
+        {loading ? (
+          <View style={{ marginTop: RFPercentage(5), alignItems: "center" }}>
+            <ActivityIndicator size="large" color={Colors.blue} />
+            <Text
+              style={{
+                fontSize: RFPercentage(2.5),
+                color: Colors.darkGrey,
+                fontFamily: FontFamily.medium,
+                marginTop: RFPercentage(2),
+              }}
+            >
+              Loading properties...
+            </Text>
+          </View>
+        ) : properties.length === 0 ? (
           <View style={{ marginTop: RFPercentage(5) }}>
             <Text
               style={{

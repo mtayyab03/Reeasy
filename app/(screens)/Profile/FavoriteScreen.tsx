@@ -5,7 +5,7 @@ import {
   Text,
   TextInput,
   Image,
-  TouchableOpacity,
+  ActivityIndicator,
   StyleSheet,
   ScrollView,
   Alert,
@@ -144,7 +144,21 @@ const FavoriteScreen = () => {
         style={{ width: "100%" }}
         showsVerticalScrollIndicator={false}
       >
-        {loading && <Text style={{ marginTop: 20 }}>Loading...</Text>}
+        {loading && (
+          <View style={{ marginTop: RFPercentage(5), alignItems: "center" }}>
+            <ActivityIndicator size="large" color={Colors.blue} />
+            <Text
+              style={{
+                fontSize: RFPercentage(2.5),
+                color: Colors.darkGrey,
+                fontFamily: FontFamily.medium,
+                marginTop: RFPercentage(2),
+              }}
+            >
+              Loading Favorite...
+            </Text>
+          </View>
+        )}
 
         {!loading && filteredProperties.length === 0 && (
           <Text style={{ marginTop: 20, fontSize: 16, color: Colors.darkGrey }}>

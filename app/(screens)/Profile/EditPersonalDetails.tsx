@@ -32,16 +32,10 @@ import { fontSize } from "@/constants/fontUtils";
 const EditPersonalDetails = () => {
   const router = useRouter();
 
-  const existingUser = {
-    name: "John Doe",
-    phone: "1234567890",
-    imageUri: "https://i.imgur.com/CzXTtJV.jpg",
-  };
+  const [name, setName] = useState<string>("");
+  const [phone, setPhone] = useState<string>("");
 
-  const [name, setName] = useState<string>(existingUser.name);
-  const [phone, setPhone] = useState<string>(existingUser.phone);
-
-  const [image, setImage] = useState<string | null>(existingUser.imageUri);
+  const [image, setImage] = useState<string | null>("");
   const [alertVisible, setAlertVisible] = useState(false);
   const [alertMessage, setAlertMessage] = useState("");
   const [alertType, setAlertType] = useState<"success" | "error">("success");

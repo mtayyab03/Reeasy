@@ -4,7 +4,7 @@ import {
   View,
   Text,
   TextInput,
-  TouchableOpacity,
+  ActivityIndicator,
   StyleSheet,
   Alert,
   ScrollView,
@@ -54,6 +54,8 @@ type ScheduleItem = {
 const Schedule = () => {
   const router = useRouter();
   const [searchQuery, setSearchQuery] = useState("");
+  const [loading, setLoading] = useState(false);
+
   type TabType = "Received" | "Requested" | "Confirmed" | "Visits";
 
   const tabs: TabType[] = ["Received", "Requested", "Confirmed", "Visits"];
@@ -74,6 +76,7 @@ const Schedule = () => {
 
   const fetchAllAppointments = async () => {
     try {
+      setLoading(true);
       const [receivedRes, requestedRes, confirmedRes, visitsRes] =
         await Promise.all([
           apiClient.get("/api/property/appointment/owner-received"),
@@ -133,6 +136,8 @@ const Schedule = () => {
       });
     } catch (error) {
       console.log("Error fetching appointments:", error);
+    } finally {
+      setLoading(false); // ✅ end loading
     }
   };
 
@@ -229,7 +234,22 @@ const Schedule = () => {
         style={{ width: "100%" }}
         showsVerticalScrollIndicator={false}
       >
-        {filteredData.length > 0 ? (
+        {loading ? (
+          <View style={{ marginTop: RFPercentage(5), alignItems: "center" }}>
+            <ActivityIndicator size="large" color={Colors.blue} />
+            <Text
+              style={{
+                marginTop: RFPercentage(2),
+                fontSize: fontSize(14),
+                fontFamily: FontFamily.medium,
+                color: Colors.darkGrey,
+                textAlign: "center",
+              }}
+            >
+              Loading appointments...
+            </Text>
+          </View>
+        ) : filteredData.length > 0 ? (
           filteredData.map((item) => {
             // console.log("Mapping Card:", item);
             return (

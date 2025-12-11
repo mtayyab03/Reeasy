@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useRouter } from "expo-router";
 import {
   Image,
@@ -13,8 +13,10 @@ import { MaterialIcons, Feather } from "@expo/vector-icons";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 
 // Components
-import Screen from "@/components/common/Screen";
 import CommonModal from "@/components/common/CommonModal";
+
+// API
+import apiClient, { BASE_URL } from "@/app/apis/apiClient";
 
 // redux
 import { useDispatch } from "react-redux";
@@ -49,6 +51,27 @@ const Profile: React.FC<ProfileScreenProps> = () => {
   const router = useRouter();
   const dispatch = useDispatch<AppDispatch>();
   const [isModalVisible, setIsModalVisible] = useState(false);
+  const [name, setName] = useState<string>("");
+
+  const [image, setImage] = useState<string | null>("");
+
+  useEffect(() => {
+    const fetchUser = async () => {
+      try {
+        const response = await apiClient.get("/api/user/me");
+        const user = response.data.data;
+
+        setName(user.fullName || "");
+
+        setImage(user.profilePic ? `${BASE_URL}${user.profilePic}` : null);
+        console.log("data response", response.data);
+      } catch (error) {
+        console.log("Error fetching user", error);
+      }
+    };
+
+    fetchUser();
+  }, []);
 
   // Correct logout handler
   const handleLogout = async () => {
@@ -65,8 +88,11 @@ const Profile: React.FC<ProfileScreenProps> = () => {
       <View style={styles.headerContainer}>
         <View style={styles.profileWrapper}>
           <View>
-            <Image style={styles.profileImage} source={icons.profile} />
-            <Text style={styles.name}>Jhon Smith</Text>
+            <Image
+              style={styles.profileImage}
+              source={image ? { uri: image } : icons.emptyP}
+            />
+            <Text style={styles.name}>{name}</Text>
           </View>
         </View>
       </View>
@@ -176,12 +202,14 @@ const styles = StyleSheet.create({
   profileImage: {
     width: fontSize(80),
     height: fontSize(80),
+    borderRadius: fontSize(40),
   },
   name: {
     marginTop: RFPercentage(1),
     color: Colors.white,
     fontFamily: FontFamily.medium,
     fontSize: fontSize(14),
+    marginLeft: RFPercentage(1),
   },
   points: {
     color: Colors.white,

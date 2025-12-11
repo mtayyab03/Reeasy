@@ -33,54 +33,17 @@ import { FontFamily } from "@/constants/font";
 import icons from "@/constants/icons";
 import { fontSize } from "@/constants/fontUtils";
 
-type MsgData = {
-  id: string;
-  name: string;
-  time: string;
-  lastmsg: string;
-  profileImage: string;
-};
-
-const ChatPerson: MsgData[] = [
-  {
-    id: "1",
-    name: "John Doe",
-    profileImage: "https://randomuser.me/api/portraits/men/1.jpg",
-    time: "21:30",
-    lastmsg: "I thought it was you, lol",
-  },
-  {
-    id: "4",
-    name: "Jone Snow",
-    profileImage: "https://randomuser.me/api/portraits/men/3.jpg",
-    time: "09:22",
-    lastmsg: "Just sent the design, feel thi...",
-  },
-  {
-    id: "5",
-    name: "Allen Virk",
-    profileImage: "https://randomuser.me/api/portraits/women/4.jpg",
-    time: "05:20",
-    lastmsg: "Whats up Sam, it’s Frankie.",
-  },
-  {
-    id: "6",
-    name: "Lemo Roge",
-    profileImage: "https://randomuser.me/api/portraits/women/5.jpg",
-    time: "11:30",
-    lastmsg: "Sam, are you kidding?!",
-  },
-];
-
 const Chat = () => {
   const router = useRouter();
   const [searchQuery, setSearchQuery] = useState("");
   const [chatList, setChatList] = useState<any[]>([]);
   const [senderUid, setSenderUid] = useState("");
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     const fetchSenderUser = async () => {
       try {
+        setLoading(true);
         const res = await apiClient.get("/api/user/me");
         setSenderUid(res.data.data.uuid);
       } catch (err) {
@@ -93,7 +56,7 @@ const Chat = () => {
 
   useEffect(() => {
     if (!senderUid) return;
-
+    setLoading(true);
     const q = query(
       collection(db, "chats"),
       where("users", "array-contains", senderUid),
@@ -111,6 +74,7 @@ const Chat = () => {
       });
 
       setChatList(chats);
+      setLoading(false);
     });
 
     return () => unsubscribe();
@@ -149,62 +113,74 @@ const Chat = () => {
       </View>
 
       <View style={{ width: "90%", alignItems: "center" }}>
-        {filteredChatPersons.map((item) => {
-          const isMe = item.senderUid === senderUid;
+        {loading ? (
+          <Text
+            style={{
+              marginTop: 50,
+              color: Colors.darkGrey,
+              fontSize: fontSize(14),
+              fontFamily: FontFamily.medium,
+            }}
+          >
+            Loading chats...
+          </Text>
+        ) : filteredChatPersons.length > 0 ? (
+          filteredChatPersons.map((item) => {
+            const isMe = item.senderUid === senderUid;
 
-          const displayName = isMe ? item.receiverName : item.senderName;
-          const displayImage = isMe ? item.receiverImage : item.senderImage;
-          const displayUid = isMe ? item.receiverUid : item.senderUid;
+            const displayName = isMe ? item.receiverName : item.senderName;
+            const displayImage = isMe ? item.receiverImage : item.senderImage;
+            const displayUid = isMe ? item.receiverUid : item.senderUid;
 
-          return (
-            <TouchableOpacity
-              style={{ width: "100%" }}
-              key={item.id}
-              activeOpacity={0.7}
-              onPress={() =>
-                router.push({
-                  pathname: "/(screens)/Main/ChatScreen",
-                  params: {
-                    ownerName: displayName,
-                    ownerImage: displayImage,
-                    ownerUid: displayUid,
-                  },
-                })
-              }
-            >
-              <View
-                style={{
-                  width: "100%",
-                  flexDirection: "row",
-                  alignItems: "center",
-                  marginVertical: RFPercentage(1),
-                }}
+            return (
+              <TouchableOpacity
+                style={{ width: "100%" }}
+                key={item.id}
+                activeOpacity={0.7}
+                onPress={() =>
+                  router.push({
+                    pathname: "/(screens)/Main/ChatScreen",
+                    params: {
+                      ownerName: displayName,
+                      ownerImage: displayImage,
+                      ownerUid: displayUid,
+                    },
+                  })
+                }
               >
-                {/* Profile Image */}
-                <Image
-                  source={displayImage ? { uri: displayImage } : icons.emptyP}
-                  style={styles.profileImage}
-                />
+                <View
+                  style={{
+                    width: "100%",
+                    flexDirection: "row",
+                    alignItems: "center",
+                    marginVertical: RFPercentage(1),
+                  }}
+                >
+                  {/* Profile Image */}
+                  <Image
+                    source={displayImage ? { uri: displayImage } : icons.emptyP}
+                    style={styles.profileImage}
+                  />
 
-                {/* Name + Last message */}
-                <View style={{ flex: 1, marginLeft: 10 }}>
-                  <Text style={styles.name}>{displayName}</Text>
-                  <Text style={styles.details}>{item.lastMessage}</Text>
+                  {/* Name + Last message */}
+                  <View style={{ flex: 1, marginLeft: 10 }}>
+                    <Text style={styles.name}>{displayName}</Text>
+                    <Text style={styles.details}>{item.lastMessage}</Text>
+                  </View>
+
+                  {/* Time */}
+                  <Text style={styles.time}>
+                    {item.lastMessageTime?.toDate
+                      ? format(item.lastMessageTime.toDate(), "hh:mm a")
+                      : ""}
+                  </Text>
                 </View>
 
-                {/* Time */}
-                <Text style={styles.time}>
-                  {item.lastMessageTime?.toDate
-                    ? format(item.lastMessageTime.toDate(), "hh:mm a")
-                    : ""}
-                </Text>
-              </View>
-
-              <AppLine />
-            </TouchableOpacity>
-          );
-        })}
-        {filteredChatPersons.length === 0 && (
+                <AppLine />
+              </TouchableOpacity>
+            );
+          })
+        ) : (
           <View style={{ alignItems: "center", marginTop: 50 }}>
             <Ionicons name="mail-outline" size={50} color={Colors.lightGrey} />
             <Text style={{ marginTop: 10, color: Colors.lightGrey }}>
