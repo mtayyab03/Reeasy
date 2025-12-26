@@ -21,27 +21,34 @@ export interface LoginResponse {
   accessToken: string;
   refreshToken: string;
 }
-
+export interface AuthError {
+  status?: number;
+  message: string;
+}
 /* ---------------------- Thunks ---------------------- */
 
 // Load tokens from storage
-export const loadTokens = createAsyncThunk(
-  "auth/loadTokens",
-  async (): Promise<{
-    accessToken: string | null;
-    refreshToken: string | null;
-  }> => {
-    const accessToken = await AsyncStorage.getItem("accessToken");
-    const refreshToken = await AsyncStorage.getItem("refreshToken");
-    return { accessToken, refreshToken };
-  }
-);
+export const loadTokens = createAsyncThunk("auth/loadTokens", async () => {
+  const accessToken = await AsyncStorage.getItem("accessToken");
+  const refreshToken = await AsyncStorage.getItem("refreshToken");
+
+  return {
+    accessToken:
+      accessToken && accessToken !== "null" && accessToken !== "undefined"
+        ? accessToken
+        : null,
+    refreshToken:
+      refreshToken && refreshToken !== "null" && refreshToken !== "undefined"
+        ? refreshToken
+        : null,
+  };
+});
 
 // Login user
 export const login = createAsyncThunk<
   LoginResponse,
   LoginPayload,
-  { rejectValue: string }
+  { rejectValue: AuthError }
 >("auth/login", async ({ email, password }, { rejectWithValue }) => {
   try {
     const response = await apiClient.post("/api/auth/login", {
@@ -51,25 +58,21 @@ export const login = createAsyncThunk<
 
     const { accessToken, refreshToken } = response.data.data;
 
-    // Store tokens
     await AsyncStorage.setItem("accessToken", accessToken);
     await AsyncStorage.setItem("refreshToken", refreshToken);
 
     return { accessToken, refreshToken };
   } catch (error: any) {
-    // check server response
-    if (error.response && error.response.data) {
-      const data = error.response.data;
-      // prefer message first, then error object
-      if (data.message) return rejectWithValue(data.message);
-      if (data.error) {
-        // stringify all error fields into a single string
-        const errors = Object.values(data.error).join("\n");
-        return rejectWithValue(errors);
-      }
+    if (error.response) {
+      return rejectWithValue({
+        status: error.response.status, // ✅ THIS IS KEY
+        message: error.response.data?.message || "Authentication failed",
+      });
     }
 
-    return rejectWithValue("Login failed"); // fallback
+    return rejectWithValue({
+      message: "Network error",
+    });
   }
 });
 
@@ -135,7 +138,7 @@ const authSlice = createSlice({
       )
       .addCase(login.rejected, (state, action) => {
         state.status = "failed";
-        state.error = (action.payload as string) || "Login failed";
+        state.error = action.payload?.message || "Login failed";
       })
 
       // Clear tokens

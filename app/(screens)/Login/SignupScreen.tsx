@@ -80,7 +80,7 @@ export default function SignupScreen() {
         });
         Alert.alert(
           "Signup Success",
-          response.data.message || "Sigup Success."
+          "Uew account created successfully. Please verify your email."
         );
       } else {
         // Some error from server
@@ -149,7 +149,9 @@ export default function SignupScreen() {
                 <TextInput
                   style={styles.input}
                   keyboardType="email-address"
-                  onChangeText={handleChange("email")}
+                  onChangeText={(text) =>
+                    handleChange("email")(text.toLowerCase())
+                  }
                   onBlur={() => setFieldTouched("email")}
                   autoCapitalize="none"
                   value={values.email}
@@ -330,7 +332,7 @@ const styles = StyleSheet.create({
     borderRadius: RFPercentage(1),
   },
   input: {
-    width: "80%",
+    width: "90%",
     fontFamily: FontFamily.regular,
     color: Colors.lightBlack,
     fontSize: RFPercentage(2),

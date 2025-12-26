@@ -55,8 +55,10 @@ const ItemEdit = () => {
   const additionFeature = ["Pool", "Garage", "Water Front"];
   const [selectedFeatures, setSelectedFeatures] = useState<string[]>([]);
   const [isEnabledAppointment, setIsEnabledAppointment] = useState(true);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const [images, setImages] = useState<string[]>([]);
+  // Change from string[] to object[]
+  const [images, setImages] = useState<{ uri: string; isNew: boolean }[]>([]);
 
   const pickImage = async () => {
     if (images.length >= 4) {
@@ -70,7 +72,7 @@ const ItemEdit = () => {
     });
 
     if (!result.canceled) {
-      setImages([...images, result.assets[0].uri]);
+      setImages([...images, { uri: result.assets[0].uri, isNew: true }]);
     }
   };
 
@@ -120,9 +122,10 @@ const ItemEdit = () => {
           // Map images
           setImages(
             data.images && data.images.length > 0
-              ? data.images.map(
-                  (img: { imageUrl: string }) => `${BASE_URL}${img.imageUrl}`
-                )
+              ? data.images.map((img: { imageUrl: string }) => ({
+                  uri: `${BASE_URL}${img.imageUrl}`,
+                  isNew: false, // mark existing images
+                }))
               : []
           );
         }
@@ -138,41 +141,55 @@ const ItemEdit = () => {
 
   // 📌 Submit edited property to API
   const handleSubmit = async () => {
-    if (!title.trim() || !price.trim() || !address.trim()) {
-      Alert.alert("Missing Fields", "Please fill all required fields.");
-      return;
-    }
+    if (isSubmitting) return;
+    setIsSubmitting(true);
 
     try {
-      // 1️⃣ Prepare patch data
+      // PATCH main data
       const patchData = {
-        title,
+        title: title.trim() !== "" ? title : "empty",
         price,
-        bedrooms,
+        totalBedRooms: bedrooms,
         fullBath,
         halfBath,
-        livingAreaSize: livigAreaSize,
-        yearBuilt,
+        area: livigAreaSize,
+        builtYear: yearBuilt,
         address,
         description,
-        type: selectedType,
-        features: selectedFeatures,
-        openForAppointments: isEnabledAppointment,
+        propertyType: selectedType,
+        pool: selectedFeatures.includes("Pool"),
+        garage: selectedFeatures.includes("Garage"),
+        waterFront: selectedFeatures.includes("Water Front"),
+        appointmentOpen: isEnabledAppointment,
+        language: "en",
       };
-
-      console.log("Sending PATCH data:", patchData);
 
       await apiClient.patch(`/api/property/${parsedProperty.uuid}`, patchData);
 
-      // 2️⃣ Upload new images if any (replace or add)
-      const imageUploads = images.filter(
-        (img: any) => !img.uri?.startsWith(BASE_URL)
-      );
-      if (imageUploads.length > 0) {
+      // Prepare new images for upload
+      const newImages = images.filter((img: any) => img.isNew);
+      const existingImages = images.filter((img: any) => !img.isNew);
+
+      // DELETE old images that were removed
+      // Assuming API supports DELETE with list of removed images
+      const removedImages = propertyData.images
+        .map((img: any) => `${BASE_URL}${img.imageUrl}`)
+        .filter(
+          (img: string) => !existingImages.find((e: any) => e.uri === img)
+        );
+
+      if (removedImages.length > 0) {
+        await apiClient.delete(`/api/property/${parsedProperty.uuid}/images`, {
+          data: { images: removedImages },
+        });
+      }
+
+      // Upload new images
+      if (newImages.length > 0) {
         const formData = new FormData();
-        imageUploads.forEach((uri, index) => {
+        newImages.forEach((img: any, index: number) => {
           formData.append("images", {
-            uri,
+            uri: img.uri,
             name: `image_${index}.jpg`,
             type: "image/jpeg",
           } as any);
@@ -191,6 +208,8 @@ const ItemEdit = () => {
     } catch (error) {
       console.error("Failed to update property:", error);
       Alert.alert("Error", "Failed to update property. Try again.");
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -230,9 +249,9 @@ const ItemEdit = () => {
                 <Text style={styles.placeholderText}>Choose Images</Text>
               </View>
             ) : (
-              images.map((uri, index) => (
+              images.map((img, index) => (
                 <View key={index} style={styles.imageWrapper}>
-                  <Image source={{ uri }} style={styles.image} />
+                  <Image source={{ uri: img.uri }} style={styles.image} />
                   <TouchableOpacity
                     style={styles.removeBtn}
                     onPress={() => removeImage(index)}
@@ -251,13 +270,17 @@ const ItemEdit = () => {
         </TouchableOpacity>
 
         {/* Add property details */}
-        <InputField placeTitle="Title" value={title} onChangeText={setTitle} />
+        {/* <InputField placeTitle="Title" value={title} onChangeText={setTitle} /> */}
         <View style={{ marginTop: RFPercentage(1) }} />
+
         <InputField
-          placeTitle="Enter the price"
+          placeTitle="Price"
           value={price}
           onChangeText={setPrice}
           numeric
+          showInitialText
+          InitialText="$"
+          containerStyle={{ flexDirection: "row", alignItems: "center" }}
         />
         <View style={{ marginTop: RFPercentage(1) }} />
         <InputField
@@ -296,11 +319,19 @@ const ItemEdit = () => {
         </View>
 
         <View style={{ marginTop: RFPercentage(1) }} />
+
         <InputField
-          placeTitle="Enter Sqft Living area"
+          placeTitle="Living area Sqft"
           value={livigAreaSize}
           onChangeText={setLivigAreaSize}
           numeric
+          showInitialText
+          InitialText="Sqft"
+          containerStyle={{
+            flexDirection: "row",
+            alignItems: "center",
+            paddingLeft: RFPercentage(4),
+          }}
         />
         <View style={{ marginTop: RFPercentage(1) }} />
         <InputField
@@ -446,8 +477,12 @@ const ItemEdit = () => {
           onPress={handleSubmit}
           style={styles.loginbutton}
           activeOpacity={0.7}
+          disabled={isSubmitting}
         >
-          <AppButton title="Submit" buttonColor={Colors.blue} />
+          <AppButton
+            title={isSubmitting ? "Submitting..." : "Submit"}
+            buttonColor={Colors.blue}
+          />
         </TouchableOpacity>
       </ScrollView>
     </Screen>

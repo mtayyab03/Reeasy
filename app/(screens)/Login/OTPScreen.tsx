@@ -2,7 +2,6 @@ import React, { useState, useRef } from "react";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import {
   Image,
-  KeyboardAvoidingView,
   TouchableOpacity,
   StyleSheet,
   View,
@@ -11,8 +10,8 @@ import {
   Alert,
 } from "react-native";
 import { RFPercentage } from "react-native-responsive-fontsize";
-import { AntDesign, Feather } from "@expo/vector-icons";
-import { useRoute, useNavigation, RouteProp } from "@react-navigation/native";
+import { Feather } from "@expo/vector-icons";
+import { useRoute, RouteProp } from "@react-navigation/native";
 
 // Components
 import Screen from "@/components/common/Screen";
@@ -108,7 +107,7 @@ export default function OTPScreen() {
       let endpoint = "";
       let body = { email, otp: Number(code) };
 
-      if (type === "signup") {
+      if (type === "signup" || type === "login") {
         endpoint = "/api/auth/otp-verify";
       } else {
         endpoint = "/api/auth/password/otp-verify";
@@ -123,31 +122,28 @@ export default function OTPScreen() {
       console.log("🔹 API Response Data:", response.data);
 
       if (response.status === 200 || response.status === 201) {
-        Alert.alert("✅ OTP Verified Successfully");
-
         if (type === "signup") {
-          const accessToken = response?.data?.data?.accessToken;
-          console.log("🔹 Signup accessToken:", accessToken);
+          Alert.alert("✅ Email verified successfully");
 
-          if (!accessToken) {
-            console.log("❌ accessToken missing in signup response");
-          }
+          const accessToken = response?.data?.data?.accessToken;
 
           router.replace({
             pathname: "/(screens)/Login/PersonalDetails",
             params: { token: accessToken, email },
           });
+        }
 
-          console.log("➡ Navigated to PersonalDetails");
-        } else {
-          console.log("🔹 Forgot password flow…");
+        if (type === "login") {
+          Alert.alert("Success", "Email verified successfully");
 
+          router.replace("/(screens)/Login/LoginScreen");
+        }
+
+        if (type === "forgot") {
           router.replace({
             pathname: "/(screens)/Login/ResetPassword",
             params: { email },
           });
-
-          console.log("➡ Navigated to ResetPassword");
         }
       } else {
         console.log("❌ OTP API returned status:", response.status);

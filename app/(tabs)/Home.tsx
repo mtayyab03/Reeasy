@@ -1,6 +1,6 @@
 // screens/MapScreen.tsx
 import React, { useState, useRef, useEffect } from "react";
-import { useRouter } from "expo-router";
+import { useRouter, useFocusEffect } from "expo-router";
 import {
   View,
   Text,
@@ -84,33 +84,36 @@ export default function Home() {
     useState<MarkerData | null>(null);
 
   // fetch UUIDs + coordinates
-  useEffect(() => {
-    const fetchProperties = async () => {
-      try {
-        const response = await apiClient.get("/api/property");
-        const data = response.data.data.properties;
+  useFocusEffect(
+    React.useCallback(() => {
+      fetchProperties();
+    }, [])
+  );
 
-        const mappedMarkers: PropertyMarker[] = data.map((prop: any) => {
-          const latlng = JSON.parse(prop.latlng); // [lat, lng]
-          return {
-            id: prop.uuid,
-            uuid: prop.uuid,
-            coordinate: {
-              latitude: latlng[0],
-              longitude: latlng[1],
-            },
-            appointmentOpen: prop.appointmentOpen,
-          };
-        });
-        console.log("Mapped markers:", mappedMarkers);
-        setPropertyMarkers(mappedMarkers);
-      } catch (error) {
-        console.log("API Error:", error);
-      }
-    };
+  const fetchProperties = async () => {
+    try {
+      const response = await apiClient.get("/api/property");
+      const data = response.data.data.properties;
 
-    fetchProperties();
-  }, []);
+      const mappedMarkers: PropertyMarker[] = data.map((prop: any) => {
+        const latlng = JSON.parse(prop.latlng); // [lat, lng]
+        return {
+          id: prop.uuid,
+          uuid: prop.uuid,
+          coordinate: {
+            latitude: latlng[0],
+            longitude: latlng[1],
+          },
+          appointmentOpen: prop.appointmentOpen,
+        };
+      });
+      console.log("Mapped markers:", mappedMarkers);
+      setPropertyMarkers(mappedMarkers);
+    } catch (error) {
+      console.log("API Error:", error);
+    }
+  };
+
   // Add this useEffect to get user location on mount
   useEffect(() => {
     const getCurrentLocation = async () => {

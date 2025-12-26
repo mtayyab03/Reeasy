@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useRouter } from "expo-router";
 import {
   Image,
@@ -8,7 +8,6 @@ import {
   Text,
   TextInput,
   Alert,
-  Platform,
 } from "react-native";
 import { RFPercentage } from "react-native-responsive-fontsize";
 import { Formik, FormikHelpers } from "formik";
@@ -22,6 +21,7 @@ import AppButton from "@/components/common/AppButton";
 // redux
 import { useDispatch, useSelector } from "react-redux";
 import { AppDispatch } from "@/app/redux/store";
+
 import {
   login,
   selectAuthStatus,
@@ -48,7 +48,8 @@ interface LoginScreenProps {
 export default function LoginScreen(props: LoginScreenProps) {
   const router = useRouter();
   const [eyeIcon, setEyeIcon] = useState<boolean>(false);
-  const [loading, setLoading] = useState<boolean>(false);
+  const [loading, setLoading] = useState(false);
+
   const dispatch = useDispatch<AppDispatch>();
   const authStatus = useSelector(selectAuthStatus);
   const authError = useSelector(selectAuthError);
@@ -88,14 +89,21 @@ export default function LoginScreen(props: LoginScreenProps) {
 
         router.replace("/(tabs)/Home");
       } else if (login.rejected.match(resultAction)) {
-        console.error("❌ Login rejected!");
-        console.error("Payload:", resultAction.payload);
-        console.error("Error:", resultAction.error);
+        const payload = resultAction.payload;
 
-        Alert.alert(
-          "Login Failed",
-          resultAction.payload || resultAction.error.message || "Unknown error"
-        );
+        if (payload?.status === 403) {
+          Alert.alert("Login Failed", "Please verify your email first.");
+          router.push({
+            pathname: "/(screens)/Login/OTPScreen",
+            params: {
+              email: values.email,
+              type: "login",
+            },
+          });
+          return;
+        }
+
+        Alert.alert("Login Failed", payload?.message || "Invalid credentials");
       } else {
         console.warn("⚠️ Login returned unexpected action:", resultAction);
         Alert.alert("Login Failed", "Unexpected login result");
@@ -149,7 +157,9 @@ export default function LoginScreen(props: LoginScreenProps) {
                 <TextInput
                   style={styles.input}
                   keyboardType="email-address"
-                  onChangeText={handleChange("email")}
+                  onChangeText={(text) =>
+                    handleChange("email")(text.toLowerCase())
+                  }
                   onBlur={() => setFieldTouched("email")}
                   autoCapitalize="none"
                   value={values.email}
@@ -358,7 +368,7 @@ const styles = StyleSheet.create({
     borderRadius: RFPercentage(1),
   },
   input: {
-    width: "70%",
+    width: "90%",
     fontFamily: FontFamily.regular,
     color: Colors.lightBlack,
     fontSize: RFPercentage(2),

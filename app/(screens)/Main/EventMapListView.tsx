@@ -225,7 +225,7 @@ const EventMapListView = () => {
             <ActivityIndicator size="large" color={Colors.blue} />
             <Text
               style={{
-                fontSize: RFPercentage(2.5),
+                fontSize: RFPercentage(2),
                 color: Colors.darkGrey,
                 fontFamily: FontFamily.medium,
                 marginTop: RFPercentage(2),

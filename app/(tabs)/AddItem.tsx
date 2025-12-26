@@ -19,7 +19,6 @@ import PlacesInput from "@/components/common/PlacesInput";
 import Screen from "@/components/common/Screen";
 import AppButton from "@/components/common/AppButton";
 import InputField from "@/components/common/InputField";
-import CustomAlert from "@/components/common/CustomAlert";
 import { ThemedText } from "@/components/themed-text";
 
 // API
@@ -55,8 +54,8 @@ const AddItem = () => {
   const propertyTypes = ["Single fam", "Condo", "Townhouse", "Multi Family"];
   const additionFeature = ["Pool", "Garage", "Water Front"];
   const [selectedFeatures, setSelectedFeatures] = useState<string[]>([]);
-  const [isEnabledAppointment, setIsEnabledAppointment] = useState(true);
-
+  const [isEnabledAppointment, setIsEnabledAppointment] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [images, setImages] = useState<string[]>([]);
 
   const pickImage = async () => {
@@ -84,13 +83,13 @@ const AddItem = () => {
 
   // 📌 Validate min images
   const handleSubmit = async () => {
+    if (isSubmitting) return;
     if (images.length < 1) {
       Alert.alert("Minimum Required", "Please add at least 2 images.");
       return;
     }
     // ✅ Validations
     if (
-      !title.trim() ||
       !price.trim() ||
       !bedrooms.trim() ||
       !fullBath.trim() ||
@@ -110,10 +109,10 @@ const AddItem = () => {
       );
       return;
     }
-
+    setIsSubmitting(true);
     // ✅ Prepare payload
     const payload = {
-      title: title.trim(),
+      title: "empty",
       propertyType: selectedType,
       price: price.trim(),
       totalBedRooms: bedrooms.trim(),
@@ -191,10 +190,10 @@ const AddItem = () => {
 
       Alert.alert(
         "Error",
-        `Failed to submit property. ${
-          error.response?.data?.message || error.message
-        }`
+        `Failed to submit property. ${error.response?.data?.error.message}`
       );
+    } finally {
+      setIsSubmitting(false); // 🧹 STOP LOADING
     }
   };
 
@@ -258,13 +257,16 @@ const AddItem = () => {
         </TouchableOpacity>
 
         {/* Add property details */}
-        <InputField placeTitle="Title" value={title} onChangeText={setTitle} />
+        {/* <InputField placeTitle="Title" value={title} onChangeText={setTitle} /> */}
         <View style={{ marginTop: RFPercentage(1) }} />
         <InputField
           placeTitle="Price"
           value={price}
           onChangeText={setPrice}
           numeric
+          showInitialText
+          InitialText="$"
+          containerStyle={{ flexDirection: "row", alignItems: "center" }}
         />
         <View style={{ marginTop: RFPercentage(1) }} />
         <InputField
@@ -308,6 +310,13 @@ const AddItem = () => {
           value={livigAreaSize}
           onChangeText={setLivigAreaSize}
           numeric
+          showInitialText
+          InitialText="Sqft"
+          containerStyle={{
+            flexDirection: "row",
+            alignItems: "center",
+            paddingLeft: RFPercentage(4),
+          }}
         />
         <View style={{ marginTop: RFPercentage(1) }} />
         <InputField
@@ -458,8 +467,12 @@ const AddItem = () => {
           onPress={handleSubmit}
           style={styles.loginbutton}
           activeOpacity={0.7}
+          disabled={isSubmitting}
         >
-          <AppButton title="Submit" buttonColor={Colors.blue} />
+          <AppButton
+            title={isSubmitting ? "Submitting..." : "Submit"}
+            buttonColor={Colors.blue}
+          />
         </TouchableOpacity>
       </ScrollView>
     </Screen>

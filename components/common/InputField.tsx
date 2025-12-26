@@ -5,6 +5,7 @@ import {
   TextInput,
   TextInputProps,
   ViewStyle,
+  Text,
 } from "react-native";
 import { RFPercentage } from "react-native-responsive-fontsize";
 
@@ -19,6 +20,8 @@ type InputFieldProps = {
   onChangeText: (text: string) => void;
   containerStyle?: ViewStyle; // 👈 new prop
   numeric?: boolean;
+  showInitialText?: boolean;
+  InitialText?: string;
 } & TextInputProps;
 
 const InputField: React.FC<InputFieldProps> = ({
@@ -27,6 +30,8 @@ const InputField: React.FC<InputFieldProps> = ({
   onChangeText,
   containerStyle,
   numeric = false,
+  showInitialText = false,
+  InitialText,
   ...rest
 }) => {
   const handleTextChange = (text: string) => {
@@ -40,6 +45,8 @@ const InputField: React.FC<InputFieldProps> = ({
   };
   return (
     <View style={[styles.Inputmain, containerStyle]}>
+      {showInitialText && <Text style={styles.prefix}>{InitialText}</Text>}
+      {/* ✅ Show only if true */}
       <TextInput
         style={[
           styles.input,
@@ -76,9 +83,14 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   input: {
-    width: "90%",
+    width: "100%",
     fontFamily: FontFamily.regular,
     color: Colors.lightBlack,
     fontSize: fontSize(12),
+  },
+  prefix: {
+    fontSize: 16,
+    marginRight: 4,
+    color: "#000",
   },
 });

@@ -222,13 +222,16 @@ const ItemDetails = () => {
         </View>
 
         {/* Example content below */}
-        <View style={styles.cardDetail}>
+        <View style={[styles.cardDetail, { alignItems: "flex-start" }]}>
           <View style={{ flex: 1 }}>
             {/* Title + Type */}
             <View style={{ flexDirection: "row", alignItems: "center" }}>
-              <Text style={styles.name}>
+              {/* <Text style={styles.name}>
                 {propertyData?.title?.charAt(0).toUpperCase() +
                   propertyData?.title?.slice(1)}
+              </Text> */}
+              <Text style={[styles.name, { fontSize: fontSize(24) }]}>
+                ${propertyData?.price.toLocaleString()}
               </Text>
             </View>
 
@@ -242,13 +245,6 @@ const ItemDetails = () => {
               />
               <Text style={[styles.details, { fontSize: fontSize(9) }]}>
                 {propertyData?.address}
-              </Text>
-            </View>
-
-            <View style={styles.typeTag}>
-              <Text style={styles.typeText}>
-                {propertyData?.propertyType?.charAt(0).toUpperCase() +
-                  propertyData?.propertyType?.slice(1)}
               </Text>
             </View>
           </View>
@@ -273,10 +269,12 @@ const ItemDetails = () => {
                 Request a visit
               </Text>
             </TouchableOpacity>
-            <View style={{ marginTop: RFPercentage(1) }} />
-            <Text style={styles.name}>
-              ${propertyData?.price.toLocaleString()}
-            </Text>
+            <View style={styles.typeTag}>
+              <Text style={styles.typeText}>
+                {propertyData?.propertyType?.charAt(0).toUpperCase() +
+                  propertyData?.propertyType?.slice(1)}
+              </Text>
+            </View>
           </View>
         </View>
 
@@ -548,7 +546,6 @@ const styles = StyleSheet.create({
   },
   addressRow: {
     flexDirection: "row",
-    alignItems: "center",
     marginTop: RFPercentage(0.8),
   },
 

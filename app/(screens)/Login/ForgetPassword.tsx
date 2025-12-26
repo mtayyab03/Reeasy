@@ -9,7 +9,7 @@ import {
   Image,
 } from "react-native";
 import { RFPercentage } from "react-native-responsive-fontsize";
-import { AntDesign, Ionicons, Feather } from "@expo/vector-icons";
+import { Ionicons, Feather } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 
 // Components
@@ -61,10 +61,7 @@ export default function ForgetPassword() {
       console.log("🔹 API Response:", response.data);
 
       if (response.status === 200 || response.status === 201) {
-        Alert.alert(
-          "Success",
-          response.data.message || "OTP sent to email successfully."
-        );
+        Alert.alert("Success", "OTP sent to email successfully.");
 
         router.push({
           pathname: "/(screens)/Login/OTPScreen",
@@ -217,7 +214,7 @@ const styles = StyleSheet.create({
     borderRadius: RFPercentage(1),
   },
   input: {
-    width: "70%",
+    width: "90%",
     fontFamily: FontFamily.regular,
     color: Colors.lightBlack,
     fontSize: RFPercentage(2),
