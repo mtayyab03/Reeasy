@@ -75,11 +75,9 @@ const Schedule = () => {
   }, []);
 
   useEffect(() => {
-    const interval = setInterval(() => {
-      if (selectedTab) fetchAllAppointments();
-    }, 10000);
-
-    return () => clearInterval(interval);
+    if (selectedTab) {
+      fetchAllAppointments();
+    }
   }, [selectedTab]);
 
   const fetchAllAppointments = async () => {
