@@ -310,12 +310,11 @@ const AddItem = () => {
           value={livigAreaSize}
           onChangeText={setLivigAreaSize}
           numeric
-          showInitialText
-          InitialText="Sqft"
+          showLastText
+          LastText="Sqft"
           containerStyle={{
             flexDirection: "row",
             alignItems: "center",
-            paddingLeft: RFPercentage(4),
           }}
         />
         <View style={{ marginTop: RFPercentage(1) }} />

@@ -30,7 +30,11 @@ import { Colors } from "@/constants/Colors";
 import { FontFamily } from "@/constants/font";
 import icons from "@/constants/icons";
 import { fontSize } from "@/constants/fontUtils";
-
+type PropertyImage = {
+  uri: string;
+  isNew: boolean;
+  uuid?: string; // only for existing images
+};
 const ItemEdit = () => {
   const router = useRouter(); // ✅ get router instance
   const { property } = useLocalSearchParams();
@@ -58,7 +62,7 @@ const ItemEdit = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Change from string[] to object[]
-  const [images, setImages] = useState<{ uri: string; isNew: boolean }[]>([]);
+  const [images, setImages] = useState<PropertyImage[]>([]);
 
   const pickImage = async () => {
     if (images.length >= 4) {
@@ -77,11 +81,76 @@ const ItemEdit = () => {
   };
 
   // 📌 Remove image
-  const removeImage = (index: number) => {
+  const removeImage = async (index: number) => {
+    console.log("🗑 removeImage called");
+    console.log("📍 Index received:", index);
+
+    const img = images[index];
+
+    console.log("🖼 Image at index:", {
+      uri: img?.uri,
+      isNew: img?.isNew,
+      uuid: img?.uuid,
+    });
+
+    // Safety check
+    if (!img) {
+      console.warn("⚠️ No image found at index:", index);
+      return;
+    }
+
+    // =========================
+    // DELETE FROM SERVER (OLD IMAGE)
+    // =========================
+    if (!img.isNew && img.uuid) {
+      console.log("🌐 Calling DELETE API for image UUID:", img.uuid);
+
+      try {
+        const response = await apiClient.delete(
+          `/api/property/image/${img.uuid}`
+        );
+
+        console.log("✅ Image deleted from server:", response?.data);
+      } catch (error: any) {
+        console.error("❌ Failed to delete image from server");
+        console.error("Status:", error?.response?.status);
+        console.error("URL:", error?.response?.config?.url);
+        console.error("Response:", error?.response?.data);
+        return;
+      }
+    } else {
+      console.log("🆕 New image → skipping DELETE API");
+    }
+
+    // =========================
+    // REMOVE FROM STATE
+    // =========================
     const updated = [...images];
     updated.splice(index, 1);
+
+    console.log(
+      "📉 Images before removal:",
+      images.map((img, i) => ({
+        i,
+        uri: img.uri,
+        isNew: img.isNew,
+        uuid: img.uuid,
+      }))
+    );
+
     setImages(updated);
+
+    console.log(
+      "📈 Images after removal:",
+      updated.map((img, i) => ({
+        i,
+        uri: img.uri,
+        isNew: img.isNew,
+        uuid: img.uuid,
+      }))
+    );
   };
+
   // 📌 Fetch property from API
   useEffect(() => {
     const fetchProperty = async () => {
@@ -121,12 +190,11 @@ const ItemEdit = () => {
 
           // Map images
           setImages(
-            data.images && data.images.length > 0
-              ? data.images.map((img: { imageUrl: string }) => ({
-                  uri: `${BASE_URL}${img.imageUrl}`,
-                  isNew: false, // mark existing images
-                }))
-              : []
+            data.images.map((img: any) => ({
+              uri: `${BASE_URL}${img.imageUrl}`,
+              uuid: img.uuid,
+              isNew: false,
+            }))
           );
         }
       } catch (error) {
@@ -141,11 +209,19 @@ const ItemEdit = () => {
 
   // 📌 Submit edited property to API
   const handleSubmit = async () => {
-    if (isSubmitting) return;
+    console.log("🚀 handleSubmit started");
+
+    if (isSubmitting) {
+      console.log("⛔ Already submitting");
+      return;
+    }
+
     setIsSubmitting(true);
 
     try {
-      // PATCH main data
+      // =========================
+      // 1️⃣ PATCH PROPERTY DATA
+      // =========================
       const patchData = {
         title: title.trim() !== "" ? title : "empty",
         price,
@@ -164,52 +240,62 @@ const ItemEdit = () => {
         language: "en",
       };
 
+      console.log("📦 PATCH DATA:", patchData);
+
       await apiClient.patch(`/api/property/${parsedProperty.uuid}`, patchData);
 
-      // Prepare new images for upload
-      const newImages = images.filter((img: any) => img.isNew);
-      const existingImages = images.filter((img: any) => !img.isNew);
+      console.log("✅ PATCH success");
 
-      // DELETE old images that were removed
-      // Assuming API supports DELETE with list of removed images
-      const removedImages = propertyData.images
-        .map((img: any) => `${BASE_URL}${img.imageUrl}`)
-        .filter(
-          (img: string) => !existingImages.find((e: any) => e.uri === img)
-        );
+      // =========================
+      // 2️⃣ UPLOAD ONLY NEW IMAGES
+      // =========================
+      const newImages = images.filter((img) => img.isNew);
 
-      if (removedImages.length > 0) {
-        await apiClient.delete(`/api/property/${parsedProperty.uuid}/images`, {
-          data: { images: removedImages },
-        });
-      }
+      console.log("🆕 New images count:", newImages.length);
 
-      // Upload new images
       if (newImages.length > 0) {
         const formData = new FormData();
-        newImages.forEach((img: any, index: number) => {
+
+        newImages.forEach((img, index) => {
+          console.log("📤 Uploading image:", img.uri);
+
           formData.append("images", {
             uri: img.uri,
-            name: `image_${index}.jpg`,
+            name: `image_${Date.now()}_${index}.jpg`,
             type: "image/jpeg",
           } as any);
         });
 
-        await apiClient.put(
-          `/api/property/${parsedProperty.uuid}/images`,
+        const uploadResponse = await apiClient.post(
+          `/api/property/image/${parsedProperty.uuid}`,
           formData,
-          { headers: { "Content-Type": "multipart/form-data" } }
+          {
+            headers: { "Content-Type": "multipart/form-data" },
+          }
         );
+
+        console.log("✅ Images uploaded:", uploadResponse.data);
+      } else {
+        console.log("ℹ️ No new images to upload");
       }
 
+      // =========================
+      // 3️⃣ SUCCESS
+      // =========================
       Alert.alert("Success", "Property updated successfully!", [
         { text: "OK", onPress: () => router.back() },
       ]);
-    } catch (error) {
-      console.error("Failed to update property:", error);
-      Alert.alert("Error", "Failed to update property. Try again.");
+    } catch (error: any) {
+      console.error("🔥 SUBMIT ERROR");
+      console.error("Status:", error?.response?.status);
+      console.error("URL:", error?.response?.config?.url);
+      console.error("Response:", error?.response?.data);
+      console.error("Message:", error?.message);
+
+      Alert.alert("Error", "Something went wrong. Check logs.");
     } finally {
       setIsSubmitting(false);
+      console.log("🧹 handleSubmit finished");
     }
   };
 

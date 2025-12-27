@@ -32,6 +32,7 @@ const VisitSchedule = () => {
   console.log("Received:", title, address, price, uuid, selectedTab);
   const [date, setDate] = useState("");
   const [time, setTime] = useState("");
+  const [displayDate, setDisplayDate] = useState("");
   const handleBack = () => {
     router.back();
   };
@@ -42,6 +43,10 @@ const VisitSchedule = () => {
     }
     if (!time) {
       Alert.alert("Please select a time");
+      return;
+    }
+    if (!isFutureDate(date)) {
+      Alert.alert("Invalid date", "Please select a future date.");
       return;
     }
 
@@ -73,24 +78,47 @@ const VisitSchedule = () => {
       router.push("/(tabs)/Home");
     } catch (err) {
       const error = err as AxiosError<any>;
-      console.log("Caught error", error);
-      console.log(error.response?.data);
-      Alert.alert(
-        "Alert",
-        error.response?.data?.error ||
-          "You cannot book appointment on your own property"
-      );
+
+      let errorMessage = "Something went wrong. Please try again.";
+
+      const apiError = error.response?.data?.error;
+
+      if (typeof apiError === "string") {
+        errorMessage = apiError;
+      } else if (typeof apiError === "object") {
+        // Handles: { message: "..." } OR { appointmentDate: "..." }
+        errorMessage =
+          apiError.message ||
+          apiError.appointmentDate ||
+          Object.values(apiError)[0];
+      }
+
+      Alert.alert("Alert", String(errorMessage));
     }
   };
 
-  const formatDate = (value: string) => {
-    // incoming: "20-12-2025" or "20/12/2025"
-    const parts = value.split(/[-/]/);
+  // const formatDate = (value: string) => {
+  //   // incoming: "20-12-2025" or "20/12/2025"
+  //   const parts = value.split(/[-/]/);
 
+  //   if (parts.length !== 3) return value;
+
+  //   const [day, month, year] = parts;
+  //   return `${year}-${month}-${day}`; // backend format
+  // };
+  const formatDate = (value: string) => {
+    const parts = value.split(/[-/]/);
     if (parts.length !== 3) return value;
 
     const [day, month, year] = parts;
-    return `${year}-${month}-${day}`; // backend format
+    return `${year}-${month}-${day}`;
+  };
+  const toMMDDYYYY = (value: string) => {
+    const parts = value.split(/[-/]/);
+    if (parts.length !== 3) return value;
+
+    const [day, month, year] = parts;
+    return `${month}-${day}-${year}`;
   };
 
   const formatTime = (value: string) => {
@@ -127,6 +155,18 @@ const VisitSchedule = () => {
     if (!text) return "";
     return text.charAt(0).toUpperCase() + text.slice(1);
   };
+
+  const isFutureDate = (value: string) => {
+    const [day, month, year] = value.split(/[-/]/).map(Number);
+    const selected = new Date(year, month - 1, day);
+    const today = new Date();
+
+    today.setHours(0, 0, 0, 0);
+    selected.setHours(0, 0, 0, 0);
+
+    return selected > today;
+  };
+
   return (
     <Screen style={styles.screen}>
       <AppHeader title="Schedule" onPress={() => handleBack()} />
@@ -134,7 +174,7 @@ const VisitSchedule = () => {
       <View style={styles.cardDetail}>
         <View style={{ width: "65%" }}>
           {/* Title + Type */}
-          {title ? (
+          {/* {title ? (
             <View style={{ flexDirection: "row", alignItems: "center" }}>
               <Text style={styles.name}>
                 {" "}
@@ -143,7 +183,7 @@ const VisitSchedule = () => {
                 )}
               </Text>
             </View>
-          ) : null}
+          ) : null} */}
           {/* Address */}
           {address ? (
             <View style={styles.addressRow}>
@@ -174,9 +214,12 @@ const VisitSchedule = () => {
           Select the date and time for your visit
         </Text>
         <DatePicker
-          placeholder="DD-MM-YYYY"
-          value={date}
-          onDateChange={setDate}
+          placeholder="MM-DD-YYYY"
+          value={displayDate}
+          onDateChange={(selectedDate) => {
+            setDate(selectedDate); // keep original DD-MM-YYYY for backend
+            setDisplayDate(toMMDDYYYY(selectedDate)); // show MM-DD-YYYY
+          }}
           borderColor={Colors.stroke}
         />
 
@@ -245,7 +288,6 @@ const styles = StyleSheet.create({
   },
   addressRow: {
     flexDirection: "row",
-    alignItems: "center",
     marginTop: RFPercentage(0.8),
   },
   dateText: {
