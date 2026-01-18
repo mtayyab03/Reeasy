@@ -51,7 +51,7 @@ const AddItem = () => {
   });
   const [description, setDescription] = useState<string>("");
   const [selectedType, setSelectedType] = useState<string>("Single fam");
-  const propertyTypes = ["Single fam", "Condo", "Townhouse", "Multi Family"];
+  const propertyTypes = ["Single fam", "Condo", "Townhouse", "MultiFamily"];
   const additionFeature = ["Pool", "Garage", "Water Front"];
   const [selectedFeatures, setSelectedFeatures] = useState<string[]>([]);
   const [isEnabledAppointment, setIsEnabledAppointment] = useState(false);
@@ -95,7 +95,6 @@ const AddItem = () => {
       !fullBath.trim() ||
       !halfBath.trim() ||
       !livigAreaSize.trim() ||
-      !yearBuilt.trim() ||
       !address.trim() ||
       !description.trim()
     ) {
@@ -105,7 +104,7 @@ const AddItem = () => {
     if (!coordinates.latitude || !coordinates.longitude) {
       Alert.alert(
         "Missing Field",
-        "Please select a valid address from suggestions."
+        "Please select a valid address from suggestions.",
       );
       return;
     }
@@ -119,7 +118,7 @@ const AddItem = () => {
       fullBath: fullBath.trim(),
       halfBath: halfBath.trim(),
       area: livigAreaSize.trim(),
-      builtYear: yearBuilt.trim(),
+      builtYear: "2000",
       address: address.trim(),
       latlng: `[${coordinates.latitude}, ${coordinates.longitude}]`,
       pool: selectedFeatures.includes("Pool"),
@@ -162,7 +161,7 @@ const AddItem = () => {
           formData,
           {
             headers: { "Content-Type": "multipart/form-data" },
-          }
+          },
         );
         console.log("Images uploaded:", imageResponse.data);
       }
@@ -187,11 +186,14 @@ const AddItem = () => {
         // Something else happened
         console.log("Error:", error.message);
       }
+      const errorData = error.response?.data?.error;
 
-      Alert.alert(
-        "Error",
-        `Failed to submit property. ${error.response?.data?.error.message}`
-      );
+      const errorMessage =
+        errorData && typeof errorData === "object"
+          ? Object.values(errorData).join("\n")
+          : "Failed to submit property";
+
+      Alert.alert("Error", `Failed to submit property.\n${errorMessage}`);
     } finally {
       setIsSubmitting(false); // 🧹 STOP LOADING
     }
@@ -317,13 +319,13 @@ const AddItem = () => {
             alignItems: "center",
           }}
         />
-        <View style={{ marginTop: RFPercentage(1) }} />
+        {/* <View style={{ marginTop: RFPercentage(1) }} />
         <InputField
           placeTitle="Year Built"
           value={yearBuilt}
           onChangeText={setYearBuilt}
           numeric
-        />
+        /> */}
         <View style={{ marginTop: RFPercentage(1) }} />
         <PlacesInput
           onSelect={({ address, latitude, longitude }) => {

@@ -45,8 +45,8 @@ const VisitSchedule = () => {
       Alert.alert("Please select a time");
       return;
     }
-    if (!isFutureDate(date)) {
-      Alert.alert("Invalid date", "Please select a future date.");
+    if (!isValidFutureDateTime(date, formatTime(time))) {
+      Alert.alert("Invalid date/time", "Please select a future date and time.");
       return;
     }
 
@@ -97,15 +97,6 @@ const VisitSchedule = () => {
     }
   };
 
-  // const formatDate = (value: string) => {
-  //   // incoming: "20-12-2025" or "20/12/2025"
-  //   const parts = value.split(/[-/]/);
-
-  //   if (parts.length !== 3) return value;
-
-  //   const [day, month, year] = parts;
-  //   return `${year}-${month}-${day}`; // backend format
-  // };
   const formatDate = (value: string) => {
     const parts = value.split(/[-/]/);
     if (parts.length !== 3) return value;
@@ -156,15 +147,18 @@ const VisitSchedule = () => {
     return text.charAt(0).toUpperCase() + text.slice(1);
   };
 
-  const isFutureDate = (value: string) => {
-    const [day, month, year] = value.split(/[-/]/).map(Number);
-    const selected = new Date(year, month - 1, day);
-    const today = new Date();
+  const isValidFutureDateTime = (date: string, time: string) => {
+    // date: DD-MM-YYYY or DD/MM/YYYY
+    // time: HH:MM or HH:MM:SS (24h)
 
-    today.setHours(0, 0, 0, 0);
-    selected.setHours(0, 0, 0, 0);
+    const [day, month, year] = date.split(/[-/]/).map(Number);
+    const [hour, minute] = time.split(":").map(Number);
 
-    return selected > today;
+    const selectedDateTime = new Date(year, month - 1, day, hour, minute, 0);
+
+    const now = new Date();
+
+    return selectedDateTime > now;
   };
 
   return (

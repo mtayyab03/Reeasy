@@ -149,26 +149,34 @@ const Schedule = () => {
 
   const handleOwnerResponse = async (
     id: string,
-    response: "accepted" | "rejected"
+    response: "accepted" | "rejected",
   ) => {
     try {
+      console.log("Owner Response Error", response);
       const res = await apiClient.post(
         "/api/property/appointment/owner-response",
         {
           appointmentUid: id,
           response: response,
-        }
+        },
       );
       Alert.alert(
         "Success",
         response === "accepted"
           ? "Appointment accepted successfully"
-          : "Appointment rejected successfully"
+          : "Appointment rejected successfully",
       );
       console.log("Owner Response Success:", res.data);
       fetchAllAppointments();
-    } catch (e) {
+    } catch (e: any) {
       console.log("Owner Response Error", e);
+      const status = e.response?.status;
+      const apiMessage = e.response?.data?.error?.message;
+
+      if (status === 409 && apiMessage) {
+        Alert.alert("Alert", apiMessage);
+        return;
+      }
     }
   };
 
@@ -178,7 +186,7 @@ const Schedule = () => {
         "/api/property/appointment/booker-accept",
         {
           appointmentUid: id,
-        }
+        },
       );
       Alert.alert("Success", "You accepted the appointment successfully");
       console.log("Booker Accept Success:", res.data);
@@ -201,7 +209,7 @@ const Schedule = () => {
   };
 
   const filteredData = scheduleData[selectedTab].filter((item) =>
-    item.name.toLowerCase().includes(searchQuery.toLowerCase())
+    item.name.toLowerCase().includes(searchQuery.toLowerCase()),
   );
 
   return (

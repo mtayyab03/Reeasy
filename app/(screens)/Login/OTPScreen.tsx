@@ -41,13 +41,32 @@ export default function OTPScreen() {
   const inputRefs = useRef<Array<TextInput | null>>([]);
 
   const handleOTPChange = (index: number, value: string) => {
-    if (value.length === 0 || /^[0-9]+$/.test(value)) {
+    // Allow only numbers
+    if (!/^[0-9]*$/.test(value)) return;
+
+    // 🔥 CASE 1: User pasted full OTP (e.g. "123456")
+    if (value.length > 1) {
+      const digits = value.slice(0, 6).split("");
+
       const newOTP = [...otp];
-      newOTP[index] = value;
+      digits.forEach((digit, i) => {
+        newOTP[i] = digit;
+      });
+
       setOTP(newOTP);
-      if (value.length === 1 && index < 5) {
-        inputRefs.current[index + 1]?.focus();
-      }
+
+      // Focus last input
+      inputRefs.current[5]?.focus();
+      return;
+    }
+
+    // 🔹 CASE 2: Normal single digit typing
+    const newOTP = [...otp];
+    newOTP[index] = value;
+    setOTP(newOTP);
+
+    if (value && index < 5) {
+      inputRefs.current[index + 1]?.focus();
     }
   };
 
@@ -74,17 +93,17 @@ export default function OTPScreen() {
       } else {
         Alert.alert(
           "Failed",
-          response.data?.error?.message || "Failed to resend OTP"
+          response.data?.error?.message || "Failed to resend OTP",
         );
       }
     } catch (error: any) {
       console.log(
         "❌ Resend OTP error:",
-        error.response?.data || error.message
+        error.response?.data || error.message,
       );
       Alert.alert(
         "Error",
-        error.response?.data?.error?.message || "Something went wrong"
+        error.response?.data?.error?.message || "Something went wrong",
       );
     }
   };
@@ -156,7 +175,7 @@ export default function OTPScreen() {
 
       Alert.alert(
         "OTP Failed",
-        error.response?.data?.error.message || "Please try again"
+        error.response?.data?.error.message || "Please try again",
       );
     }
   };
@@ -219,7 +238,7 @@ export default function OTPScreen() {
             value={otp[index]}
             onChangeText={(text) => handleOTPChange(index, text)}
             keyboardType="numeric"
-            maxLength={1}
+            maxLength={index === 0 ? 6 : 1}
             ref={(ref) => {
               inputRefs.current[index] = ref;
             }}

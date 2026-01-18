@@ -34,7 +34,7 @@ const EditPersonalDetails = () => {
 
   const [name, setName] = useState<string>("");
   const [phone, setPhone] = useState<string>("");
-
+  const [email, setEmail] = useState<string>("");
   const [image, setImage] = useState<string | null>("");
   const [alertVisible, setAlertVisible] = useState(false);
   const [alertMessage, setAlertMessage] = useState("");
@@ -48,7 +48,7 @@ const EditPersonalDetails = () => {
 
         setName(user.fullName || "");
         setPhone(user.phone || "");
-
+        setEmail(user.email || "");
         setImage(user.profilePic ? `${BASE_URL}${user.profilePic}` : null);
         console.log("data response", response.data);
       } catch (error) {
@@ -120,7 +120,7 @@ const EditPersonalDetails = () => {
             headers: {
               "Content-Type": "multipart/form-data",
             },
-          }
+          },
         );
         console.log("🔹 PUT response:", imgRes.data);
       }
@@ -167,6 +167,14 @@ const EditPersonalDetails = () => {
         placeTitle="Phone number"
         value={phone}
         onChangeText={setPhone}
+      />
+      <View style={{ marginTop: RFPercentage(1) }} />
+
+      <InputField
+        placeTitle="email address"
+        value={email}
+        onChangeText={setEmail}
+        editable={false}
       />
 
       {/* button */}
@@ -229,7 +237,7 @@ const styles = StyleSheet.create({
     width: RFPercentage(12),
     height: RFPercentage(12),
     borderRadius: RFPercentage(8),
-    borderColor: Colors.lightGrey,
+    borderColor: Colors.stroke,
     borderWidth: RFPercentage(0.2),
     marginBottom: RFPercentage(3),
     marginTop: RFPercentage(3),

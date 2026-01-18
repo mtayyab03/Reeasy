@@ -65,12 +65,12 @@ export default function ForgetPassword() {
 
         router.push({
           pathname: "/(screens)/Login/OTPScreen",
-          params: { email, type: "forget" },
+          params: { email, type: "forgot" },
         });
       } else {
         Alert.alert(
           "Failed",
-          response.data.message || "Unable to send OTP right now."
+          response.data.message || "Unable to send OTP right now.",
         );
       }
     } catch (error: any) {
@@ -79,7 +79,7 @@ export default function ForgetPassword() {
       Alert.alert(
         "Error",
         error.response?.data?.message ||
-          "Something went wrong. Please try again."
+          "Something went wrong. Please try again.",
       );
     } finally {
       setLoading(false); // ✅ Stop loading
