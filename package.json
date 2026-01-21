@@ -54,7 +54,8 @@
     "react-redux": "^9.2.0",
     "yup": "^1.7.0",
     "expo-notifications": "~0.32.16",
-    "expo-device": "~8.0.10"
+    "expo-device": "~8.0.10",
+    "expo-dev-client": "~6.0.20"
   },
   "devDependencies": {
     "@types/mapbox__polyline": "^1.0.5",

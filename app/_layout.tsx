@@ -12,9 +12,7 @@ import { useColorScheme } from "@/hooks/use-color-scheme";
 import { useEffect } from "react";
 import { useRouter } from "expo-router";
 import * as Notifications from "expo-notifications";
-
-// notification
-import { registerForPushNotifications } from "@/constants/utils/notifications";
+import PushTokenManager from "@/components/Specific/PushTokenManager";
 
 import { store } from "./redux/store";
 
@@ -43,75 +41,6 @@ export default function RootLayout() {
     PoppinsBlack: require("../assets/fonts/Poppins-Black.ttf"),
   });
 
-  /* 🔔 NOTIFICATION SETUP */
-  // useEffect(() => {
-  //   let foregroundSub: Notifications.Subscription;
-  //   let responseSub: Notifications.Subscription;
-
-  //   const setupNotifications = async () => {
-  //     // 1️⃣ Register push token
-  //     const token = await registerForPushNotificationsAsync();
-
-  //     if (token) {
-  //       try {
-  //         await apiClient.post("/api/user/save-push-token", {
-  //           pushToken: token,
-  //         });
-  //       } catch (e) {
-  //         console.log("Failed to save push token");
-  //       }
-  //     }
-
-  //     // 2️⃣ Foreground notifications
-  //     foregroundSub =
-  //       Notifications.addNotificationReceivedListener(notification => {
-  //         console.log(
-  //           "🔔 Foreground notification:",
-  //           notification.request.content
-  //         );
-  //       });
-
-  //     // 3️⃣ Background / tap handling
-  //     responseSub =
-  //       Notifications.addNotificationResponseReceivedListener(response => {
-  //         const data =
-  //           response.notification.request.content.data || {};
-
-  //         console.log("🔔 Notification tapped:", data);
-
-  //         /**
-  //          * Expected backend payload:
-  //          * data: { screen: "Appointments", appointmentUid: "123" }
-  //          */
-
-  //         if (data.screen === "Appointments") {
-  //           router.push("/(tabs)/Appointments");
-  //         }
-
-  //         if (data.screen === "VisitSchedule") {
-  //           router.push({
-  //             pathname: "/(screens)/Main/VisitSchedule",
-  //             params: { uuid: data.appointmentUid },
-  //           });
-  //         }
-
-  //         if (data.screen === "Chat") {
-  //           router.push({
-  //             pathname: "/(screens)/Main/ChatScreen",
-  //             params: { chatId: data.chatId },
-  //           });
-  //         }
-  //       });
-  //   };
-
-  //   setupNotifications();
-
-  //   return () => {
-  //     foregroundSub?.remove();
-  //     responseSub?.remove();
-  //   };
-  // }, []);
-
   if (!loaded) {
     // Async font loading only occurs in development.
     return null;
@@ -120,6 +49,7 @@ export default function RootLayout() {
   return (
     <Provider store={store}>
       <ThemeProvider value={colorScheme === "dark" ? DarkTheme : DefaultTheme}>
+        <PushTokenManager />
         <Stack initialRouteName="(screens)/Login/SplashScreen">
           <Stack.Screen
             name="(screens)/Login/SplashScreen"

@@ -82,7 +82,7 @@ export const clearTokensAsync = createAsyncThunk(
   async () => {
     await AsyncStorage.removeItem("accessToken");
     await AsyncStorage.removeItem("refreshToken");
-  }
+  },
 );
 
 /* ---------------------- Slice ---------------------- */
@@ -111,12 +111,12 @@ const authSlice = createSlice({
           action: PayloadAction<{
             accessToken: string | null;
             refreshToken: string | null;
-          }>
+          }>,
         ) => {
           state.status = "succeeded";
           state.accessToken = action.payload.accessToken;
           state.refreshToken = action.payload.refreshToken;
-        }
+        },
       )
       .addCase(loadTokens.rejected, (state, action) => {
         state.status = "failed";
@@ -134,7 +134,7 @@ const authSlice = createSlice({
           state.accessToken = action.payload.accessToken;
           state.refreshToken = action.payload.refreshToken;
           state.error = null;
-        }
+        },
       )
       .addCase(login.rejected, (state, action) => {
         state.status = "failed";
@@ -156,5 +156,5 @@ const authSlice = createSlice({
 export const selectAccessToken = (state: RootState) => state.auth.accessToken;
 export const selectAuthStatus = (state: RootState) => state.auth.status;
 export const selectAuthError = (state: RootState) => state.auth.error;
-
+export const selectIsLoggedIn = (state: RootState) => !!state.auth.accessToken;
 export default authSlice.reducer;

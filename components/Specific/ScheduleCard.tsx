@@ -165,9 +165,9 @@ const ScheduleCard: React.FC<ScheduleCardProps> = ({
           <View style={{ flex: 1, marginLeft: 10 }}>
             <Text style={styles.name}>{name}</Text>
             <Text style={styles.details}>{requestText}</Text>
-            <Text style={[styles.details, { fontFamily: FontFamily.medium }]}>
+            {/* <Text style={[styles.details, { fontFamily: FontFamily.medium }]}>
               {propertyName}
-            </Text>
+            </Text> */}
             <Text style={styles.details}>{dateTime}</Text>
           </View>
         </View>
