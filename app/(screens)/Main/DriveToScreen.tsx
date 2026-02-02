@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import {
   TouchableOpacity,
   StyleSheet,
@@ -6,6 +6,8 @@ import {
   Text,
   Image,
   ImageBackground,
+  Platform,
+  Linking,
 } from "react-native";
 import { RFPercentage } from "react-native-responsive-fontsize";
 import { Feather, Ionicons } from "@expo/vector-icons";
@@ -29,7 +31,8 @@ import icons from "@/constants/icons";
 const DriveToScreen = () => {
   const router = useRouter();
   const params = useLocalSearchParams();
-
+  const mapRef = useRef<MapView | null>(null);
+  const lastRouteUpdateRef = useRef<number>(0);
   const propertyDetails = params.propertyDetails
     ? JSON.parse(params.propertyDetails as string)
     : null;
@@ -64,37 +67,103 @@ const DriveToScreen = () => {
 
   // User current location (mock)
   const [currentLocation, setCurrentLocation] = useState<LatLng | null>(null);
-  const getCurrentLocation = async () => {
-    try {
-      let { status } = await Location.requestForegroundPermissionsAsync();
+  // const getCurrentLocation = async () => {
+  //   try {
+  //     let { status } = await Location.requestForegroundPermissionsAsync();
+  //     if (status !== "granted") {
+  //       console.log("Permission denied");
+  //       return;
+  //     }
+
+  //     const loc = await Location.getCurrentPositionAsync({});
+  //     setCurrentLocation({
+  //       latitude: loc.coords.latitude,
+  //       longitude: loc.coords.longitude,
+  //     });
+  //   } catch (error) {
+  //     console.log("Location error:", error);
+  //   }
+  // };
+  // useEffect(() => {
+  //   const init = async () => {
+  //     await getCurrentLocation(); // get real location first
+  //   };
+
+  //   init();
+  // }, []);
+
+  useEffect(() => {
+    let locationSubscription: Location.LocationSubscription;
+
+    const startTracking = async () => {
+      const { status } = await Location.requestForegroundPermissionsAsync();
       if (status !== "granted") {
         console.log("Permission denied");
         return;
       }
 
-      const loc = await Location.getCurrentPositionAsync({});
-      setCurrentLocation({
-        latitude: loc.coords.latitude,
-        longitude: loc.coords.longitude,
-      });
-    } catch (error) {
-      console.log("Location error:", error);
-    }
-  };
-  useEffect(() => {
-    const init = async () => {
-      await getCurrentLocation(); // get real location first
+      locationSubscription = await Location.watchPositionAsync(
+        {
+          accuracy: Location.Accuracy.High,
+          timeInterval: 3000, // update every 3 seconds
+          distanceInterval: 5, // OR every 5 meters
+        },
+        (location) => {
+          const newLocation = {
+            latitude: location.coords.latitude,
+            longitude: location.coords.longitude,
+          };
+
+          setCurrentLocation(newLocation);
+
+          // 🔥 Move map with user
+          mapRef.current?.animateCamera(
+            {
+              center: newLocation,
+              zoom: 16,
+            },
+            { duration: 800 },
+          );
+          // 🔁 Re-fetch route every 15 seconds
+          const now = Date.now();
+          if (now - lastRouteUpdateRef.current > 15000) {
+            lastRouteUpdateRef.current = now;
+            fetchRoute(newLocation);
+          }
+        },
+      );
     };
 
-    init();
+    startTracking();
+
+    return () => {
+      locationSubscription?.remove();
+    };
   }, []);
 
-  // Fetch route AFTER current location is available
-  useEffect(() => {
-    if (currentLocation) {
-      fetchRoute();
+  const openGoogleMapsNavigation = () => {
+    const { latitude, longitude } = destination;
+
+    if (Platform.OS === "android") {
+      // 🚗 Direct navigation mode (auto-starts)
+      const url = `google.navigation:q=${latitude},${longitude}&mode=d`;
+      Linking.openURL(url);
+    } else {
+      // iOS
+      const googleMapsUrl = `comgooglemaps://?daddr=${latitude},${longitude}&directionsmode=driving`;
+      const appleMapsUrl = `comgooglemaps://?daddr=${latitude},${longitude}`;
+
+      Linking.canOpenURL("comgooglemaps://").then((supported) => {
+        if (supported) {
+          // ✅ Google Maps installed → auto navigation
+          Linking.openURL(googleMapsUrl);
+        } else {
+          // 🍎 Fallback → Apple Maps (also auto navigation)
+          Linking.openURL(appleMapsUrl);
+        }
+      });
     }
-  }, [currentLocation]);
+  };
 
   // Bottom card data
   const selectedMarker = {
@@ -117,8 +186,8 @@ const DriveToScreen = () => {
   //   address: address as string,
   // };
 
-  const fetchRoute = async () => {
-    const origin = `${currentLocation?.latitude},${currentLocation?.longitude}`;
+  const fetchRoute = async (originCoords: LatLng) => {
+    const origin = `${originCoords.latitude},${originCoords.longitude}`;
     const dest = `${destination.latitude},${destination.longitude}`;
     const API_KEY = "AIzaSyDbPuqJ96Z93BSDauOCQqXTNfXVg2yA2DQ";
     try {
@@ -130,7 +199,7 @@ const DriveToScreen = () => {
 
       console.log(
         "Google Directions API response:",
-        JSON.stringify(data, null, 2)
+        JSON.stringify(data, null, 2),
       );
 
       if (data.status !== "OK") {
@@ -155,17 +224,13 @@ const DriveToScreen = () => {
     }
   };
 
-  useEffect(() => {
-    fetchRoute();
-  }, []);
-
   const calculateDistance = (
     lat1: number,
     lon1: number,
     lat2: number,
-    lon2: number
+    lon2: number,
   ): string => {
-    const R = 6371; // kilometers
+    const R = 3958.8; // miles
     const dLat = ((lat2 - lat1) * Math.PI) / 180;
     const dLon = ((lon2 - lon1) * Math.PI) / 180;
 
@@ -190,10 +255,20 @@ const DriveToScreen = () => {
           <Ionicons name="arrow-back" size={24} color={Colors.lightBlack} />
         </TouchableOpacity>
       </View>
+      <View style={styles.navbutton}>
+        <TouchableOpacity
+          style={styles.startNavButton}
+          onPress={openGoogleMapsNavigation}
+        >
+          <Ionicons name="navigate" size={16} color="white" />
+          <Text style={styles.startNavText}>Open Google Map</Text>
+        </TouchableOpacity>
+      </View>
 
       {/* Map */}
       {currentLocation && (
         <MapView
+          ref={mapRef}
           style={styles.map}
           initialRegion={{
             latitude: currentLocation.latitude,
@@ -277,7 +352,7 @@ const DriveToScreen = () => {
             />
             <View style={{ flex: 1, marginLeft: 10 }}>
               <Text style={styles.name}>{selectedMarker.name}</Text>
-              <Text style={styles.details}>{selectedMarker.type}</Text>
+              {/* <Text style={styles.details}>{selectedMarker.type}</Text> */}
               <Text style={styles.details}>{selectedMarker.address}</Text>
             </View>
             <View style={styles.detailButton}>
@@ -292,8 +367,8 @@ const DriveToScreen = () => {
                       currentLocation.latitude,
                       currentLocation.longitude,
                       destination.latitude,
-                      destination.longitude
-                    )} km away`
+                      destination.longitude,
+                    )} mi away`
                   : "Loading..."}
               </Text>
             </View>
@@ -319,6 +394,16 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.white,
     padding: 8,
     borderRadius: 30,
+    shadowColor: "#000",
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 4,
+  },
+  navbutton: {
+    position: "absolute",
+    top: RFPercentage(8),
+    right: RFPercentage(2),
+    zIndex: 10,
     shadowColor: "#000",
     shadowOpacity: 0.2,
     shadowRadius: 4,
@@ -373,5 +458,22 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.2,
     shadowRadius: 5,
     elevation: 5,
+  },
+
+  startNavButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: Colors.blue,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 8,
+  },
+
+  startNavText: {
+    color: "white",
+    fontFamily: FontFamily.semiBold,
+    marginLeft: 6,
+    fontSize: fontSize(12),
   },
 });

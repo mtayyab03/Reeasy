@@ -42,6 +42,8 @@ const bed = require("../assets/images/icons/bed.png");
 const bath = require("../assets/images/icons/bath.png");
 const area = require("../assets/images/icons/area.png");
 const emptyP = require("../assets/images/icons/emptyP.png");
+const prede = require("../assets/images/icons/prede.png");
+const pgreene = require("../assets/images/icons/pgreene.png");
 
 const logout = require("../assets/images/icons/logout.png");
 export default {
@@ -50,6 +52,8 @@ export default {
   language,
   favorite,
   location,
+  prede,
+  pgreene,
   adbanner,
   emptyP,
   house1,

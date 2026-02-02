@@ -202,7 +202,6 @@ const styles = StyleSheet.create({
   },
   addressRow: {
     flexDirection: "row",
-    alignItems: "center",
     marginTop: RFPercentage(0.4),
   },
 });

@@ -55,7 +55,7 @@ const ItemDetails = () => {
   const handleScroll = (event: NativeSyntheticEvent<NativeScrollEvent>) => {
     const slide = Math.ceil(
       event.nativeEvent.contentOffset.x /
-        event.nativeEvent.layoutMeasurement.width
+        event.nativeEvent.layoutMeasurement.width,
     );
     if (slide !== activeIndex) {
       setActiveIndex(slide);
@@ -76,7 +76,7 @@ const ItemDetails = () => {
         // Already favorited → call DELETE
         if (favouritePropertyUid) {
           await apiClient.delete(
-            `/api/property/favourite/${favouritePropertyUid}`
+            `/api/property/favourite/${favouritePropertyUid}`,
           );
           setLiked(false);
           setFavouritePropertyUid(null);
@@ -107,7 +107,7 @@ const ItemDetails = () => {
       if (!parsedProperty?.uuid) return;
       try {
         const response = await apiClient.get(
-          `/api/property/${parsedProperty.uuid}?language=en`
+          `/api/property/${parsedProperty.uuid}?language=en`,
         );
         if (response.data.success) {
           setPropertyData(response.data.data);
@@ -251,24 +251,49 @@ const ItemDetails = () => {
 
           {/* Price + Area */}
           <View style={{ alignItems: "flex-end" }}>
-            <TouchableOpacity
-              style={styles.detailButton}
-              onPress={() =>
-                router.push({
-                  pathname: "/(screens)/Main/VisitSchedule",
-                  params: {
-                    title: propertyData?.title,
-                    address: propertyData?.address,
-                    price: propertyData?.price?.toString(),
-                    uuid: propertyData?.uuid,
-                  },
-                })
-              }
-            >
-              <Text style={{ color: "white", fontFamily: FontFamily.semiBold }}>
-                Request a visit
-              </Text>
-            </TouchableOpacity>
+            {propertyData?.is_mine ? (
+              // If the property belongs to the user
+              <View
+                style={[styles.detailButton, { backgroundColor: "#4CAF50" }]}
+              >
+                <Text
+                  style={{ color: "white", fontFamily: FontFamily.semiBold }}
+                >
+                  Owner
+                </Text>
+              </View>
+            ) : propertyData?.appointmentOpen ? (
+              // If property is not mine and appointment is open
+              <TouchableOpacity
+                style={styles.detailButton}
+                onPress={() =>
+                  router.push({
+                    pathname: "/(screens)/Main/VisitSchedule",
+                    params: {
+                      title: propertyData?.title,
+                      address: propertyData?.address,
+                      price: propertyData?.price?.toString(),
+                      uuid: propertyData?.uuid,
+                    },
+                  })
+                }
+              >
+                <Text
+                  style={{ color: "white", fontFamily: FontFamily.semiBold }}
+                >
+                  Request a visit
+                </Text>
+              </TouchableOpacity>
+            ) : (
+              // If property is not mine and appointment is closed
+              <View style={[styles.detailButton, { backgroundColor: "grey" }]}>
+                <Text
+                  style={{ color: "white", fontFamily: FontFamily.semiBold }}
+                >
+                  Not Available
+                </Text>
+              </View>
+            )}
             <View style={styles.typeTag}>
               <Text style={styles.typeText}>
                 {propertyData?.propertyType?.charAt(0).toUpperCase() +

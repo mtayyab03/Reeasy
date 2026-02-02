@@ -15,6 +15,7 @@ interface ScheduleCardProps {
   propertyName: string;
   dateTime: string;
   statusTab: string; // 👈 NEW
+  propertyAddress?: string;
   requestStatus?: "accepted" | "rejected" | "pending"; // 👈 NEW
   onAccept?: () => void;
   onReject?: () => void;
@@ -29,6 +30,7 @@ const ScheduleCard: React.FC<ScheduleCardProps> = ({
   name,
   requestText,
   propertyName,
+  propertyAddress,
   dateTime,
   statusTab,
   requestStatus,
@@ -169,6 +171,9 @@ const ScheduleCard: React.FC<ScheduleCardProps> = ({
               {propertyName}
             </Text> */}
             <Text style={styles.details}>{dateTime}</Text>
+            {propertyAddress && (
+              <Text style={styles.details}>{propertyAddress}</Text>
+            )}
           </View>
         </View>
 

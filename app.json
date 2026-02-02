@@ -24,7 +24,6 @@
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false,
       "package": "com.tayyabgondal.Reeasy",
-
       "config": {
         "googleMaps": {
           "apiKey": "AIzaSyDbPuqJ96Z93BSDauOCQqXTNfXVg2yA2DQ"
@@ -62,9 +61,11 @@
     "extra": {
       "router": {},
       "eas": {
-        "projectId": "05a70b22-b385-434d-93d0-508a5f5b5fbf"
+        "projectId": "a36c10a2-918e-4f18-bb76-b9f95647896e"
       }
     },
-    "assetBundlePatterns": ["**/*"]
+    "assetBundlePatterns": [
+      "**/*"
+    ]
   }
 }

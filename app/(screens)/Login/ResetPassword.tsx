@@ -46,10 +46,14 @@ export default function ResetPassword() {
   const handleResetPassword = async () => {
     let newErrors: typeof errors = {};
 
+    const passwordRegex =
+      /^(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]).{8,}$/;
+
     if (!password) {
       newErrors.password = "Password is required";
-    } else if (password.length < 8) {
-      newErrors.password = "Password must be at least 8 characters";
+    } else if (!passwordRegex.test(password)) {
+      newErrors.password =
+        "Password must be at least 8 characters and include 1 uppercase letter, 1 number, and 1 special character (#, @, ! etc.)";
     }
 
     if (!confirmPassword) {
@@ -88,7 +92,7 @@ export default function ResetPassword() {
         "Failed",
         error.response?.data?.message ||
           error.response?.data?.error?.message ||
-          "Something went wrong"
+          "Something went wrong",
       );
     }
   };

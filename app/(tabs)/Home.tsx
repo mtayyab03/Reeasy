@@ -32,6 +32,7 @@ type PropertyMarker = {
   coordinate: { latitude: number; longitude: number };
   uuid: string;
   appointmentOpen: boolean;
+  profilePic: any;
 };
 
 type MarkerData = {
@@ -87,7 +88,7 @@ export default function Home() {
   useFocusEffect(
     React.useCallback(() => {
       fetchProperties();
-    }, [])
+    }, []),
   );
 
   const fetchProperties = async () => {
@@ -105,6 +106,9 @@ export default function Home() {
             longitude: latlng[1],
           },
           appointmentOpen: prop.appointmentOpen,
+          profilePic: prop.user?.profilePic
+            ? { uri: `${BASE_URL}${prop.user.profilePic}` }
+            : icons.emptyP,
         };
       });
       console.log("Mapped markers:", mappedMarkers);
@@ -137,7 +141,7 @@ export default function Home() {
           latitudeDelta: 0.01,
           longitudeDelta: 0.01,
         },
-        1000
+        1000,
       );
     };
 
@@ -148,7 +152,7 @@ export default function Home() {
   const handleMarkerPress = async (marker: PropertyMarker) => {
     try {
       const response = await apiClient.get(
-        `/api/property/${marker.uuid}?language=en`
+        `/api/property/${marker.uuid}?language=en`,
       );
       if (response.data.success) {
         const prop = response.data.data;
@@ -201,7 +205,7 @@ export default function Home() {
         latitudeDelta: 0.01,
         longitudeDelta: 0.01,
       },
-      1000
+      1000,
     );
   };
   const capitalizeFirstLetter = (text: string) => {
@@ -227,7 +231,7 @@ export default function Home() {
             onPress={() => handleMarkerPress(marker)}
           >
             <Image
-              source={marker.appointmentOpen ? icons.Pgreen : icons.Pred} // dynamically pick icon based on appointmentOpen
+              source={marker.appointmentOpen ? icons.pgreene : icons.prede} // dynamically pick icon based on appointmentOpen
               style={{
                 width: 40,
                 height: 40,
@@ -235,6 +239,20 @@ export default function Home() {
               }}
               resizeMode="contain"
             />
+            {marker.profilePic && (
+              <Image
+                source={marker.profilePic}
+                style={{
+                  width: 22,
+                  height: 22,
+                  borderRadius: 20,
+                  position: "absolute",
+                  bottom: 15,
+                  alignSelf: "center",
+                }}
+                resizeMode="cover"
+              />
+            )}
           </Marker>
         ))}
 

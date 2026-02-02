@@ -34,7 +34,7 @@ type ScheduleItem = {
   dateTime: string;
   requestStatus?: any;
   ownerReschedule?: boolean;
-
+  propertyAddress: string;
   // 👉 ADD THESE TWO
   propertyDetails?: {
     uuid: string;
@@ -277,6 +277,7 @@ const Schedule = () => {
                 statusTab={selectedTab}
                 ownerReschedule={item.ownerReschedule}
                 requestStatus={item.requestStatus}
+                propertyAddress={item.propertyDetails?.address}
                 onAccept={() => {
                   if (selectedTab === "Received") {
                     handleOwnerResponse(item.id, "accepted");
