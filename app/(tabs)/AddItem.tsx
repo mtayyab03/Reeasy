@@ -111,7 +111,7 @@ const AddItem = () => {
     setIsSubmitting(true);
     // ✅ Prepare payload
     const payload = {
-      title: "empty",
+      title: title,
       propertyType: selectedType,
       price: price.trim(),
       totalBedRooms: bedrooms.trim(),

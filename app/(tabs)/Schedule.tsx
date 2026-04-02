@@ -80,6 +80,22 @@ const Schedule = () => {
     }
   }, [selectedTab]);
 
+  const utcToLocal = (date: string, time: string) => {
+    const utcDateTime = new Date(`${date}T${time}Z`);
+
+    if (isNaN(utcDateTime.getTime())) {
+      return { localDate: "", localTime: "" };
+    }
+
+    return {
+      localDate: utcDateTime.toLocaleDateString(),
+      localTime: utcDateTime.toLocaleTimeString([], {
+        hour: "2-digit",
+        minute: "2-digit",
+      }),
+    };
+  };
+
   const fetchAllAppointments = async () => {
     try {
       setLoading(true);
@@ -92,53 +108,82 @@ const Schedule = () => {
         ]);
 
       setScheduleData({
-        Received: receivedRes.data.data.map((item: any) => ({
-          id: item.uuid,
-          profileImage: item.booker?.profilePic
-            ? `${BASE_URL}${item.booker.profilePic}`
-            : "",
-          name: item.booker?.fullName || "No Name",
-          requestText: "Visiting Request Received",
-          propertyName: item.propertyDetails.title,
-          dateTime: `${item.appointmentDate} - ${item.appointmentTime}`,
-          ownerReschedule: item.propertyOwnerResheduled,
-        })),
-        Requested: requestedRes.data.data.map((item: any) => ({
-          id: item.uuid,
-          profileImage: item.propertyOwner?.profilePic
-            ? `${BASE_URL}${item.propertyOwner.profilePic}`
-            : "",
-          name: item.propertyOwner?.fullName || "No Name",
-          requestText: "Visiting Request Send",
-          propertyName: item.propertyDetails.title,
-          dateTime: `${item.appointmentDate} - ${item.appointmentTime}`,
-          requestStatus: item.status,
-          ownerReschedule: item.propertyOwnerResheduled,
-        })),
-        Confirmed: confirmedRes.data.data.map((item: any) => ({
-          id: item.uuid,
-          profileImage: item.booker?.profilePic
-            ? `${BASE_URL}${item.booker.profilePic}`
-            : "",
-          name: item.booker?.fullName || "No Name",
-          requestText: "Visits I Accepted",
-          propertyName: item.propertyDetails.title,
-          dateTime: `${item.appointmentDate} - ${item.appointmentTime}`,
-        })),
-        Visits: visitsRes.data.data.map((item: any) => ({
-          id: item.uuid,
-          profileImage: item.propertyOwner?.profilePic
-            ? `${BASE_URL}${item.propertyOwner.profilePic}`
-            : "",
-          name: item.propertyOwner?.fullName || "No Name",
-          requestText: "Visits I Will Attend",
-          propertyName: item.propertyDetails.title,
-          dateTime: `${item.appointmentDate} - ${item.appointmentTime}`,
+        Received: receivedRes.data.data.map((item: any) => {
+          const { localDate, localTime } = utcToLocal(
+            item.appointmentDate,
+            item.appointmentTime,
+          );
+          return {
+            id: item.uuid,
+            profileImage: item.booker?.profilePic
+              ? `${BASE_URL}${item.booker.profilePic}`
+              : "",
+            name: item.booker?.fullName || "No Name",
+            requestText: "Visiting Request Received",
+            propertyName: item.propertyDetails.title,
+            dateTime: `${localDate} - ${localTime}`,
+            propertyDetails: item.propertyDetails,
+            ownerReschedule: item.propertyOwnerResheduled,
+          };
+        }),
+        Requested: requestedRes.data.data.map((item: any) => {
+          const { localDate, localTime } = utcToLocal(
+            item.appointmentDate,
+            item.appointmentTime,
+          );
+          return {
+            id: item.uuid,
+            profileImage: item.propertyOwner?.profilePic
+              ? `${BASE_URL}${item.propertyOwner.profilePic}`
+              : "",
+            name: item.propertyOwner?.fullName || "No Name",
+            requestText: "Visiting Request Send",
+            propertyName: item.propertyDetails.title,
+            propertyDetails: item.propertyDetails,
+            dateTime: `${localDate} - ${localTime}`,
+            requestStatus: item.status,
+            ownerReschedule: item.propertyOwnerResheduled,
+          };
+        }),
 
-          // 👉 ADD THESE TWO FULL OBJECTS
-          propertyDetails: item.propertyDetails,
-          propertyOwner: item.propertyOwner,
-        })),
+        Confirmed: confirmedRes.data.data.map((item: any) => {
+          const { localDate, localTime } = utcToLocal(
+            item.appointmentDate,
+            item.appointmentTime,
+          );
+          return {
+            id: item.uuid,
+            profileImage: item.booker?.profilePic
+              ? `${BASE_URL}${item.booker.profilePic}`
+              : "",
+            name: item.booker?.fullName || "No Name",
+            requestText: "Visits I Accepted",
+            propertyName: item.propertyDetails.title,
+            propertyDetails: item.propertyDetails,
+            dateTime: `${localDate} - ${localTime}`,
+          };
+        }),
+
+        Visits: visitsRes.data.data.map((item: any) => {
+          const { localDate, localTime } = utcToLocal(
+            item.appointmentDate,
+            item.appointmentTime,
+          );
+          return {
+            id: item.uuid,
+            profileImage: item.propertyOwner?.profilePic
+              ? `${BASE_URL}${item.propertyOwner.profilePic}`
+              : "",
+            name: item.propertyOwner?.fullName || "No Name",
+            requestText: "Visits I Will Attend",
+            propertyName: item.propertyDetails.title,
+            dateTime: `${localDate} - ${localTime}`,
+
+            // 👉 ADD THESE TWO FULL OBJECTS
+            propertyDetails: item.propertyDetails,
+            propertyOwner: item.propertyOwner,
+          };
+        }),
       });
     } catch (error) {
       console.log("Error fetching appointments:", error);
@@ -172,6 +217,10 @@ const Schedule = () => {
       console.log("Owner Response Error", e);
       const status = e.response?.status;
       const apiMessage = e.response?.data?.error?.message;
+      Alert.alert(
+        "Alert",
+        apiMessage || "Something went wrong. Please try again.",
+      );
 
       if (status === 409 && apiMessage) {
         Alert.alert("Alert", apiMessage);
